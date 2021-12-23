@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+
+  uap:
+    container_name: uap
+    image: nginx
+    ports: 
+      - "80:80"
+    volumes:
+      - ./src:/usr/share/nginx/html
