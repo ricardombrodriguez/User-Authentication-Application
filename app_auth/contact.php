@@ -83,13 +83,13 @@
             <div class="row">
                 <div class="col-lg-3">
                     <div class="header__logo">
-                        <a href="./home.php"><img src="img/logo.png" height="60px" alt=""></a>
+                        <a href="./index.php"><img src="img/logo.png" height="60px" alt=""></a>
                     </div>
                 </div>
                 <div class="col-lg-6">
                     <nav class="header__menu">
                         <ul>
-                            <li><a href="./home.php">Home</a></li>
+                            <li><a href="./index.php">Home</a></li>
                             <li><a href="./contact.php">Contact</a></li>
                         </ul>
                     </nav>

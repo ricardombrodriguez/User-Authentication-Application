@@ -4,8 +4,8 @@ services:
 
   uap:
     container_name: uap
-    image: nginx
+    image: php:8.0-apache
     ports: 
       - "8000:80"
     volumes:
-      - ./src:/usr/share/nginx/html
+      - ./src:/var/www/html/
