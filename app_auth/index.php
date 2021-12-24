@@ -108,7 +108,7 @@ include("connection.php");
                 <div class="col-lg-3">
                     <div class="header__cart">
                         <ul>
-                            <li><a href="http://localhost:80" style="color: green"><i class="fa fa-sign-in"></i> Login</a></li>
+                            <li><a href="./login.php" style="color: green"><i class="fa fa-sign-in"></i> Login</a></li>
                             <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
                             <li><a href="./shoping-cart.php" style="color: green"><i class="fa fa-shopping-cart"></i> Shopping Cart</a></li>
                         </ul>

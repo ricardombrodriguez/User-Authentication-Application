@@ -5,15 +5,16 @@ volumes:
 
 services:
   www:
-    build: .
+    build: app_auth/api/
     ports: 
         - "5000:80"
     volumes:
-        - ./../:/var/www/html/
+        - ./app_auth/:/var/www/html/
     links:
         - mysql
+        - uap
     networks:
-        - default
+      - mynetwork
     restart: always
 
   mysql:
@@ -29,5 +30,19 @@ services:
       - MYSQL_ROOT_PASSWORD=admin
     volumes:
       - datafiles:/var/lib/mysql
-      - ./db/spoton.sql:/docker-entrypoint-initdb.d/spoton.sql
+      - ./app_auth/api/db/spoton.sql:/docker-entrypoint-initdb.d/spoton.sql
     restart: always
+
+  uap:
+    container_name: uap
+    build: ./uap/src
+    ports: 
+      - "8000:80"
+    volumes:
+      - ./uap/src:/var/www/html/
+    networks:
+      - mynetwork  
+
+networks:
+  mynetwork:
+    driver: bridge

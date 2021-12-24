@@ -3,64 +3,57 @@
   <head>
     <script src="uap.js"></script>
     <meta charset="UTF-8">
-    <title>UAP</title>
+    <title>User Authentication Pa</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
     <link rel="stylesheet" href="uap.css">
   </head>
 
   <body>
-    <form onsubmit="return handleClick(this)">
-      <h1>Chave de encriptação</h1>
+    <form method="POST">
+      <h1>Autenticação</h1>
       <hr/>
       <div class="formcontainer">
         <div class="container">
-            <label for="username"><strong>Username</strong></label>
-            <input type="text" id="email" name="email" placeholder="Email">
+          <label for="username"><strong>UsersID</strong></label>
+          <input type="text" id="email" name="email" placeholder="Email">
         </div>
-        <h3>hwdwdaaaaaaaaaaaaaasssssssssssw3</h3>
         <div class="container">
-            <label for="password"><strong>Password</strong></label>
-            <hr>
-            <input type="password" id="pass" name="pass" placeholder="Password" required>
+          <label for="password"><strong>Password</strong></label>
+          <input type="password" id="pass" name="pass" placeholder="Password" required>
         </div>
         <button type="submit" name="bttn">Login</button>
       </div>
 
       <?php 
           if (isset($_POST['bttn']) ) {
-							
-            $mail = mysqli_real_escape_string($conn, $_POST['email']);
-            $pass = md5(mysqli_real_escape_string($conn, $_POST['pass']));
+
+            $mail = $_POST['email'];
 
             // API URL
-            $url = 'http://localhost:5000/';
+            $url = 'https://host.docker.internal:5000/uap.php';
 
-            // Create a new cURL resource
-            $ch = curl_init($url);
-
-            // Setup request to send json via POST
             $data = array(
-              'email' => "'" .$mail. "'",
-              'password' => "'" .$pass. "'",
+              'email' => "'" .$mail. "'"
             );
-            $payload = json_encode(array("user" => $data));
 
-            // Attach encoded JSON string to the POST fields
-            curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+            
+            // use key 'http' even if you send the request to https://...
+            $options = array(
+                'http' => array(
+                    'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
+                    'method'  => 'POST',
+                    'content' => http_build_query($data)
+                )
+            );
+            $context  = stream_context_create($options);
+            $result = file_get_contents($url, false, $context);
+            if ($result === FALSE) { 
+              echo "not connected";
+            } else {
+              echo "connected!";
+            }
+            var_dump($result);
 
-            // Set the content type to application/json
-            curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
-
-            // Return response instead of outputting
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-            // Execute the POST request
-            $result = curl_exec($ch);
-
-            // Close cURL resource
-            curl_close($ch);
-
-            echo "done";
           }
         ?>
 

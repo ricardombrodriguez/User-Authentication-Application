@@ -9,7 +9,7 @@ form {
     border: 5px solid #f1f1f1;
 }
 
-input[type=text]{
+input {
     width: 100%;
     padding: 16px 8px;
     margin: 8px 0;
@@ -43,6 +43,6 @@ button:hover {
 }
 
 .container {
-    padding: 16px 0;
+    padding: 6px 0;
     text-align:left;
 }
