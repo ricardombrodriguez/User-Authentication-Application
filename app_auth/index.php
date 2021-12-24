@@ -94,31 +94,35 @@
 							$mail = mysqli_real_escape_string($conn, $_POST['email']);
 							$pass = md5(mysqli_real_escape_string($conn, $_POST['pass']));
 
-							$query = "SELECT * FROM users WHERE email='".$mail."' AND pass = '".$pass."'" ;
-                        	$result = mysqli_query($conn,$query);
+							// API URL
+							$url = 'http://localhost:9090/';
 
-							if (!$result){
+							// Create a new cURL resource
+							$ch = curl_init($url);
 
-								echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">Wrong credentials. Try again.</p> </div>";
+							// Setup request to send json via POST
+							$data = array(
+								'email' => "'" .$mail. "'",
+								'password' => "'" .$pass. "'",
+							);
+							$payload = json_encode(array("user" => $data));
 
-							} else {
+							// Attach encoded JSON string to the POST fields
+							curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
 
-								$current_user = mysqli_fetch_array($result);
+							// Set the content type to application/json
+							curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type:application/json'));
 
-								if ($current_user) {
-									// header('location: home.php');
+							// Return response instead of outputting
+							curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-									$_SESSION['user_nome'] = $current_user['nome'];
-									$_SESSION['user_id'] = $current_user['id'];
-									$_SESSION['user_email'] = $current_user['email'];	
+							// Execute the POST request
+							$result = curl_exec($ch);
 
-									echo "<script> location.replace('home.php'); </script>";
-									
-								} else {
-									echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR.</p> </div>";
-								}
-							}
+							// Close cURL resource
+							curl_close($ch);
 
+							echo "done";
 						}
 					?>
 

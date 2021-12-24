@@ -2,6 +2,7 @@
 <html>
   <head>
     <script src="uap.js"></script>
+    <meta charset="UTF-8">
     <title>UAP</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
     <style>
@@ -57,6 +58,11 @@
             <label for="pass"><strong>Password</strong></label>
             <input type="text" placeholder="Password" name="pass" required>
         </div>
+        <?php 
+          echo "começar";
+          $data = json_decode(file_get_contents('php://input'), true);
+          echo $data;
+        ?>
         <button type="submit">Login</button>
       </div>
     </form>
