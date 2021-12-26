@@ -1,6 +1,6 @@
 <?php
-    foreach ($_POST as $param_name => $param_val) {
-    echo "Param: $param_name; Value: $param_val<br />\n";
-    }
+    echo "OI";
+    echo $_POST["email"];
+    var_dump($_POST);
 ?>
 

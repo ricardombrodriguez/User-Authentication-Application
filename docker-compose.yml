@@ -4,7 +4,8 @@ volumes:
   datafiles:
 
 services:
-  www:
+  website:
+    container_name: website
     build: app_auth/api/
     ports: 
         - "5000:80"
@@ -12,9 +13,6 @@ services:
         - ./app_auth/:/var/www/html/
     links:
         - mysql
-        - uap
-    networks:
-      - mynetwork
     restart: always
 
   mysql:
@@ -40,9 +38,3 @@ services:
       - "8000:80"
     volumes:
       - ./uap/src:/var/www/html/
-    networks:
-      - mynetwork  
-
-networks:
-  mynetwork:
-    driver: bridge
