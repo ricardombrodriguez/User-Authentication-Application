@@ -1,4 +1,4 @@
 <?php
-$url = "http://172.20.128.3";
+$url = "http://localhost:8000";
 header('Location: '.$url);
 ?>

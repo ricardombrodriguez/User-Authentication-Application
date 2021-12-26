@@ -9,17 +9,46 @@
   </head>
 
   <body>
+  <?php
+
+    // {"mail": "admin", "pass": "admin"}
+    $string = file_get_contents("credentials.json");  
+    $autofill_mail = "";
+    $autofill_pass = "";
+
+    if ($string != null) {
+
+      echo "entrou";
+
+      $credential = json_decode($string, true);
+      if ($credential === null) {
+        echo "ERROR";
+      }
+      
+      foreach ($credential as $u) {
+        foreach ($u as $k => $v) {  
+          if ($k === "mail") {
+            $autofill_mail = $v;
+          } else if ($k === "pass") {
+            $autofill_pass = $v;
+          }
+        }
+        break;
+      }
+
+    }
+  ?>
     <form method="POST">
       <h1>Autenticação</h1>
       <hr/>
       <div class="formcontainer">
-        <div class="container">
+        <div class="container"></div>
           <label for="username"><strong>UsersID</strong></label>
-          <input type="text" id="email" name="email" placeholder="Email">
+          <input type="text" id="email" name="email" value=<?php echo $autofill_mail ?> required>
         </div>
         <div class="container">
           <label for="password"><strong>Password</strong></label>
-          <input type="password" id="pass" name="pass" placeholder="Password" required>
+          <input type="password" id="pass" name="pass" placeholder="Password" value=<?php echo $autofill_pass ?> required>
         </div>
         <button type="submit" name="bttn">Login</button>
       </div>
@@ -35,7 +64,7 @@
           );
 
           $curl = curl_init();
-          $url = "http://172.26.0.4/uap.php";
+          $url = "http://localhost:5000/uap.php";
           curl_setopt($curl,CURLOPT_URL,$url);
           curl_setopt($curl,CURLOPT_POST, true);
           curl_setopt($curl,CURLOPT_POSTFIELDS, http_build_query($data));
@@ -48,31 +77,9 @@
           curl_close ($curl);
 
 
-          //
-          $_SESSION["mail"] = $mail;
-
-          /*           // API URL
-          $url = 'http://172.17.0.1:5000/uap.php';
-
-          $data = array(
-            'email' => "'" .$mail. "'"
-          );
-
-          $options = array(
-              'http' => array(
-                  'header'  => "Content-type: application/x-www-form-urlencoded\r\n",
-                  'method'  => 'POST',
-                  'content' => http_build_query($data)
-              )
-          );
-          $context  = stream_context_create($options);
-          $result = file_get_contents($url, false, $context);
-          if ($result === FALSE) { 
-            echo "not connected";
-          } else {
-            echo "connected!";
-          }
-          var_dump($result); */
+          // localmente
+          $_ENV["mail"] = $mail;
+          putenv('MAIL="'. $mail .'"');
 
         }
       ?>
