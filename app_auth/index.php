@@ -150,13 +150,6 @@ include("connection.php");
                             <form method="GET">
                                 <input type="text" placeholder="Where do you want to travel?" name="searchitem">
                                 <button type="submit" class="site-btn" style="text-align: center;" name="searchbtn">SEARCH</button>
-                                <?php
-                                    /* if (isset($_POST["searchitem"])) {
-                                        echo "SELECT * from trips where nome like '".$_POST["searchitem"]."%'";
-                                        $q = "SELECT * from trips where nome like '".$_POST["searchitem"]."%'";
-                                    } */
-
-                                ?>
                             </form>
                         </div>
                     </div>
