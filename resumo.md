@@ -80,3 +80,6 @@ PARA ESTE PROJETO ==> Os alunos devem fornecer uma versão de seu aplicativo Web
 * uap: contém o UAP, incluindo instruções para executá-lo. Este componente seria executado no computador cliente.
 
 * README.md: contém a descrição do projeto e os autores;
+
+
+sudo apt install php7.4-cli

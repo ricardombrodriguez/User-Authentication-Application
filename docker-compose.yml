@@ -4,7 +4,10 @@ volumes:
   datafiles:
 
 services:
+
   website:
+    depends_on:
+        - uap
     container_name: website
     build: app_auth/api/
     ports: 
@@ -30,6 +33,8 @@ services:
       - datafiles:/var/lib/mysql
       - ./app_auth/api/db/spoton.sql:/docker-entrypoint-initdb.d/spoton.sql
     restart: always
+    cap_add:
+      - SYS_NICE
 
   uap:
     container_name: uap
