@@ -1,16 +1,30 @@
 from flask import Flask
 from flask import jsonify
 from flask import request
-from flask import render_template                                                   
-import requests                                                  
+from flask import render_template     
+                                              
+from flask import redirect, url_for
+
+import json
+
+import requests   
 
 app = Flask(__name__)        
 
-@app.route('/')                                                                 
+@app.route('/', methods=['POST', 'GET'])                                                                 
 def index():                          
     if request.method == 'POST':
-        pass
-    return render_template('index.html') 
+        mail = request.form['email']
+        password = request.form['pass']
+
+        data = {'email': mail, 'pass': password}
+        data = json.dumps(data)
+        res = requests.post('http://127.0.0.1:5000/uap', json=data)
+        print(f'response from server: {res.text}')
+        return "Porto 3 - 0 Benfica"
+
+    else:
+        return render_template('index.html') 
 
 # manda os dados com o redirect do /uap
 @app.route('/dns', methods=['GET'])                                                                 
