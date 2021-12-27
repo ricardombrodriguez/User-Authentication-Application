@@ -7,6 +7,8 @@
 
     include("connection.php");
 
+    echo "AI AI AI ".$_POST;
+
     $received_mail = $_POST['email'];
 
     $mail = mysqli_real_escape_string($conn, $received_mail);
