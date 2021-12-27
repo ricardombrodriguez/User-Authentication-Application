@@ -16,9 +16,7 @@
     $autofill_mail = "";
     $autofill_pass = "";
 
-    if ($string != null) {
-
-      echo "entrou";
+    if ($string != null){
 
       $credential = json_decode($string, true);
       if ($credential === null) {
@@ -26,15 +24,18 @@
       }
       
       foreach ($credential as $u) {
-        foreach ($u as $k => $v) {  
+        // foreach ($u as $k => $v) { 
+          echo $u[0];
+          echo $k->mail;
+          echo $v->pass;
           if ($k === "mail") {
             $autofill_mail = $v;
           } else if ($k === "pass") {
             $autofill_pass = $v;
           }
         }
-        break;
-      }
+        // break;
+      // }
 
     }
   ?>
