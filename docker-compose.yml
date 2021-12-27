@@ -36,10 +36,10 @@ services:
     cap_add:
       - SYS_NICE
 
-  uap:
-    container_name: uap
-    build: ./uap/src
-    ports: 
-      - "8000:80"
-    volumes:
-      - ./uap/src:/var/www/html/
+  # uap:
+  #   container_name: uap
+  #   build: ./uap/src
+  #   ports: 
+  #     - "8000:80"
+  #   volumes:
+  #     - ./uap/src:/var/www/html/
