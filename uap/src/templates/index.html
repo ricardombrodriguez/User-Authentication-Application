@@ -13,13 +13,13 @@
       <h1>Autenticação</h1>
       <hr/>
       <div class="formcontainer">
-        <div class="container"></div>
+        <div class="container">
           <label for="username"><strong>Email</strong></label>
-          <input type="text" id="email" name="email"  placeholder="Email">
+          <input type="text" id="email" name="email"  placeholder="Email" value="{{ saved_mail }}">
         </div>
         <div class="container">
           <label for="password"><strong>Password</strong></label>
-          <input type="password" id="pass" name="pass" placeholder="Password">
+          <input type="password" id="pass" name="pass" placeholder="Password" value="{{ saved_pass }}">
         </div>
         <button type="submit" name="bttn">Login</button>
       </div>

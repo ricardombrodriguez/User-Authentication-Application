@@ -3,20 +3,22 @@ version: '3.8'
 volumes:
   datafiles:
 
+# docker run --name spoton -e MYSQL_ROOT_PASSWORD=admin -e MYSQL_DATABASE=spoton -e MYSQL_USER=admin -e MYSQL_PASSWORD=admin -p 33060:3306 -d mysql/mysql-server:5.7
+
 services:
 
-  website:
-    depends_on:
-        - uap
-    container_name: website
-    build: app_auth/api/
-    ports: 
-        - "5000:80"
-    volumes:
-        - ./app_auth/:/var/www/html/
-    links:
-        - mysql
-    restart: always
+  # website:
+  #   depends_on:
+  #       - uap
+  #   container_name: website
+  #   build: app_auth/api/
+  #   ports: 
+  #       - "5000:80"
+  #   volumes:
+  #       - ./app_auth/:/var/www/html/
+  #   links:
+  #       - mysql
+  #   restart: always
 
   mysql:
     container_name: spoton
