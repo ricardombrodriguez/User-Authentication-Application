@@ -26,8 +26,7 @@ from flask import redirect, url_for
 
 import json, os
 
-import requests
-from werkzeug.wrappers.response import ResponseStreamMixin   
+import requests   
 
 app = Flask(__name__)
 
@@ -59,11 +58,7 @@ def index():
 
         # encripar email????
 
-        res = requests.post('http://127.0.0.1:5000/uap', json=data)
-
-
-
-        print(f'response from server: {res.text}')
+        requests.post('http://127.0.0.1:5000/uap', json=data)
         return "Porto 3 - 0 Benfica"
 
     # verificar se existe ou não credenciais para o dns
@@ -104,53 +99,50 @@ def challenge_response():
 
         # recebido
         challenge_received = data['challenge']
-        response_received = get_response(challenge_received, None)
+        response_to_challenge_received = get_response(challenge_received, None)
 
         create_challenge()
-        print(challenge)
+        # print(challenge)
         response = get_response(challenge_received, challenge)
 
-        payload = {}
-        payload['challenge'] = challenge
-        payload['response'] = response_received
+        payload = {'challenge': challenge_received, 'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
         print("[UAP] Iteração número " + str(ECHAP_CURRENT) + ":")
         print(payload)
-        print(response)
+        print("response to my challenge ",response)
         print("=============")
 
-        res = requests.post('http://127.0.0.1:5000/protocol', json=data)
+        requests.post('http://127.0.0.1:5000/protocol', json=data)
         return "ok"
         
     else:
-        
         print("else")
         data = request.get_json(force=True) 
         data = json.loads(data)
 
-        challenge_received = data['challenge']
-        response_received = get_response(challenge_received, challenge)    # resposta ao challenge que recebemos
+        challenge_received = data['new_challenge']
+        # response_to_challenge_received = get_response(challenge_received, challenge)    # resposta ao challenge que recebemos
+        response_to_challenge_received = get_response(challenge, challenge_received)      # resposta ao challenge que recebemos
 
         data_received = data['response']
         valid = verify_response(response, data_received)
         
-        old_challenge = challenge
-        payload = {}
+        # old_challenge = challenge
+        
         create_challenge()
-        response = get_response(challenge_received, old_challenge)
+        # response = get_response(challenge_received, old_challenge)
+        response = get_response(challenge_received, challenge)
 
-        payload['challenge'] = challenge
-        payload['response'] = response_received
+        payload = {'challenge': challenge_received, 'response': response_to_challenge_received, 'new_challenge': challenge }
+        data = json.dumps(payload)
 
         print("[UAP] Iteração número " + str(ECHAP_CURRENT) + ":")
         print(payload)
-        print(response)
+        print("response to new challenge ",response)
         print("=============")
 
-
-        data = json.dumps(payload)
-        res = requests.post('http://127.0.0.1:5000/protocol', json=data)
+        requests.post('http://127.0.0.1:5000/protocol', json=data)
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
 
@@ -180,20 +172,20 @@ def create_challenge():
     global challenge
     challenge = str(secrets.randbelow(1000000))
 
-def get_response(received_challenge, challenge):
+def get_response(received_challenge, mychallenge):
     # misturar challenge com password
     global password
 
-    print("===")
+    """ print("===")
     print(received_challenge)
     print(password)
-    print(challenge)
-    print("===")
+    print(mychallenge)
+    print("===") """
 
-    if not challenge:
-        challenge = ""
+    if not mychallenge:
+        mychallenge = ""
 
-    response = sha256((received_challenge+password+challenge).encode('utf-8')).hexdigest()
+    response = sha256((received_challenge+password+mychallenge).encode('utf-8')).hexdigest()
     return response
 
 
