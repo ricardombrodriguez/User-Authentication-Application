@@ -1,3 +1,13 @@
-FROM php:7.2.6-apache
+FROM python:3.6
 
-RUN apt-get update -y && apt-get install -y curl && apt-get clean -y
+COPY ../requirements.txt /var/www/html/requirements.txt
+
+COPY ../server.py /var/www/html/server.py
+
+WORKDIR /var/www/html/
+
+RUN pip install -r requirements.txt
+
+EXPOSE 5000
+
+CMD ["python3", "server.py"]

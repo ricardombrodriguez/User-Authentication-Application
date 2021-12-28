@@ -22,26 +22,25 @@ first = True
 valid = True        # o user que estamos a autenticar é valido ou não
 is_valid = True     # variavel controlo para autenticar se user valido ou não
 password = None
+email = None
 
 @app.route('/', methods=['POST', 'GET'])                                                                 
 def index():                 
-    global password
+    global password, email, dns
     #receber o dns
 
     # login
     if request.method == 'POST':
         print("post")
-        mail = request.form['email']
+        email =  hashlib.md5(request.form['email'].encode()).hexdigest()
         password = hashlib.md5(request.form['pass'].encode()).hexdigest()
-        print("pass ", password)
-
-        # guardar credenciais no ficheiro json
+        
+        # ALTERAR AQUI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        email = request.form['email']
         
         # é enviado apenas o mail para a app
-        data = {'email': hashlib.md5(mail.encode())}
+        data = {'email': email}
         data = json.dumps(data)
-
-        # encripar email????
 
         requests.post('http://127.0.0.1:5000/uap', json=data)
         return "Porto 3 - 0 Benfica"
@@ -54,26 +53,46 @@ def index():
 
         with open("credentials.json") as credentials:
             data = json.load(credentials)
-            data = data[0]
-            dns = 'http://127.0.0.1:5000'
-            # Buscar as credenciais
-            if dns in data:
-                saved_mail = data[dns]["mail"]
-                saved_pass = data[dns]["pass"]
-
-                #desencriptar e isso...
+            
+            if data:
+                data = data[0]
+                
+                # Buscar as credenciais
+                if dns in data:
+                    saved_mail = data[dns]["mail"]
+                    saved_pass = data[dns]["pass"]
+                
             
         return render_template('index.html' , saved_mail=saved_mail, saved_pass=saved_pass)
 
 @app.route('/authentication', methods=['POST', 'GET'])                                                                 
 def authentication():
-    global is_valid
+    global is_valid, email, password, dns
     
     if is_valid:
-        data = "VALIDO"
+        valid = "VALIDO"
+        with open("credentials.json", "w+") as credentials:
+            lines = credentials.readlines()
+            if lines != []:
+                data = json.load(credentials)
+                data = data[0]
+                print(data)
+                # Buscar as credenciais
+                # TODO encriptar e isso...
+                if dns in data:
+                    data[dns]["mail"] = email
+                    data[dns]["pass"] = password
+                
+                else:
+                    list(data).append( json.dumps(f"{{'{dns}': {{'mail': '{email}', 'pass': '{password}'}} }}"))
+                    credentials.write(json.dumps(data))
+            else:
+                data = json.dumps(f"{{'{dns}': {{'mail': '{email}', 'pass': '{password}'}} }}")
+                credentials.write(json.dumps(data))
+            
     else:
-        data = "INVALIDO"
-    print(data)
+        valid = "INVALIDO"
+    print(valid)
     # data = json.dumps(data)
     # res = requests.post('http://127.0.0.1:5000/authentication', json=data)
     
@@ -172,13 +191,14 @@ def challenge_response():
 # manda os dados com o redirect do /uap
 @app.route('/dns', methods=['POST'])                                                                 
 def receive_dns():
+    global dns
 
     data = request.get_json(force=True) 
-    data = json.loads(data)
-    print(data)
-    print("DNS recebido: ", data)
+    data_json = json.loads(data)
+    dns = data_json["dns"]
+    print("DNS recebido: ", dns)
     # redirect para o "/"
-    return redirect(url_for('/'))
+    return redirect(url_for('index'))
 
 
 def verify_response(response_received, data_received):

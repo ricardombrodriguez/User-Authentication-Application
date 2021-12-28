@@ -38,7 +38,7 @@ def login():
     redirect_link = 'http://127.0.0.1:5001/dns'
     dns = 'http://127.0.0.1:5000'
     
-    data = dns
+    data = {"dns": dns}
     data = json.dumps(data)
     res = requests.post(redirect_link, json=data)
     print(f'Response from UAP: {res.text}')
@@ -179,10 +179,12 @@ def redirect_uap():
         data = request.get_json(force=True) 
         input_json = json.loads(data)
         mail = input_json["email"]
+        print(mail)
         
         cursor = conn.cursor()
         cursor.execute(f"SELECT * FROM users WHERE email='{mail}'")
         data = cursor.fetchone()
+        print("data", data)
         cursor.close()
         
         password = data[3]     # atualiza a password
