@@ -16,9 +16,9 @@ from requests.api import get
 
 app = Flask(__name__)  
 
-# conn = mysql.connector.connect(user='admin', password='admin',
-#                               host='localhost',  # name container
-#                               database='spoton')   
+conn = mysql.connector.connect(user='admin', password='admin',
+                              host='localhost',  # name container
+                              database='spoton')   
 
 ECHAP_CURRENT = 0
 ECHAP_MAX = 10
