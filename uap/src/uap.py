@@ -1,5 +1,5 @@
 # TODO
-# - Já conseguimos comunicar entre o server e a UAP, por isso no inicio, quando o user clica no login, este vai correr o server.py no endpoint /dns e temos de enviar uma mensagem para a UAP com o DNS (aka o ip do site para ele depois poder saber onde é que queremos fazer a autenticação). Além deste request temos de fazer o redirect para a página da uap
+# (DONE) - Já conseguimos comunicar entre o server e a UAP, por isso no inicio, quando o user clica no login, este vai correr o server.py no endpoint /dns e temos de enviar uma mensagem para a UAP com o DNS (aka o ip do site para ele depois poder saber onde é que queremos fazer a autenticação). Além deste request temos de fazer o redirect para a página da uap
 # - Na página da uap, procuramos se já existem credenciais para esse website (dns). Existe -> Completar os inputs do formulário com as credenciais para esse website. Não existe -> Esperar que o user coloque as credenciais
 # - Quando o user coloca as credenciais para esse website, temos de guardar na base de dados (o ficheiro json tem de estar encriptado!)
 # - Quando o user clica no login, o email é enviado para o server
@@ -15,20 +15,30 @@
 
 
 
+from hashlib import sha256
+from random import SystemRandom
 from flask import Flask
 from flask import jsonify
 from flask import request
 from flask import render_template     
-                                              
+import secrets                                     
 from flask import redirect, url_for
 
 import json, os
 
-import requests   
+import requests
+from werkzeug.wrappers.response import ResponseStreamMixin   
 
 app = Flask(__name__)
 
 dns = None
+ECHAP_CURRENT = 0
+ECHAP_MAX = 10
+challenge = None    # challenge criado pelo server
+response = None     # resposta para o challenge criado pelo server
+first = True        
+valid = True        # o user que estamos a autenticar é valido ou não
+password = "seguranca"
 
 @app.route('/', methods=['POST', 'GET'])                                                                 
 def index():                 
@@ -37,6 +47,7 @@ def index():
 
     # login
     if request.method == 'POST':
+        print("post")
         mail = request.form['email']
         password = request.form['pass']
 
@@ -45,7 +56,13 @@ def index():
         # é enviado apenas o mail para a app
         data = {'email': mail}
         data = json.dumps(data)
+
+        # encripar email????
+
         res = requests.post('http://127.0.0.1:5000/uap', json=data)
+
+
+
         print(f'response from server: {res.text}')
         return "Porto 3 - 0 Benfica"
 
@@ -54,18 +71,90 @@ def index():
 
         saved_mail = ""
         saved_pass = ""
+
         with open("credentials.json") as credentials:
             data = json.load(credentials)
+            data = data[0]
+            dns = 'http://127.0.0.1:5000'
+            # Buscar as credenciais
+            if dns in data:
+                saved_mail = data[dns]["mail"]
+                saved_pass = data[dns]["pass"]
 
-            #desencriptar
-        if data:
-            cred = data[0]
-            saved_mail = cred["mail"]
-            saved_pass = cred["pass"]
+                #desencriptar e isso...
             
         return render_template('index.html' , saved_mail=saved_mail, saved_pass=saved_pass)
 
-# def 
+
+
+@app.route('/protocol', methods=['POST', 'GET'])                                                                 
+def challenge_response():
+    global first, valid, response, challenge, ECHAP_CURRENT, ECHAP_MAX
+
+    ECHAP_CURRENT += 1
+
+    if ECHAP_CURRENT == ECHAP_MAX:
+        print("[UAP] VALID: " + valid)
+        return redirect(url_for('/authentication'))
+
+    if first:
+        first = False
+        data = request.get_json(force=True) 
+        data = json.loads(data)
+
+        # recebido
+        challenge_received = data['challenge']
+        response_received = get_response(challenge_received, None)
+
+        create_challenge()
+        print(challenge)
+        response = get_response(challenge_received, challenge)
+
+        payload = {}
+        payload['challenge'] = challenge
+        payload['response'] = response_received
+        data = json.dumps(payload)
+
+        print("[UAP] Iteração número " + str(ECHAP_CURRENT) + ":")
+        print(payload)
+        print(response)
+        print("=============")
+
+        res = requests.post('http://127.0.0.1:5000/protocol', json=data)
+        return "ok"
+        
+    else:
+        
+        print("else")
+        data = request.get_json(force=True) 
+        data = json.loads(data)
+
+        challenge_received = data['challenge']
+        response_received = get_response(challenge_received, challenge)    # resposta ao challenge que recebemos
+
+        data_received = data['response']
+        valid = verify_response(response, data_received)
+        
+        old_challenge = challenge
+        payload = {}
+        create_challenge()
+        response = get_response(challenge_received, old_challenge)
+
+        payload['challenge'] = challenge
+        payload['response'] = response_received
+
+        print("[UAP] Iteração número " + str(ECHAP_CURRENT) + ":")
+        print(payload)
+        print(response)
+        print("=============")
+
+
+        data = json.dumps(payload)
+        res = requests.post('http://127.0.0.1:5000/protocol', json=data)
+        return "ok"
+        # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
+
+
 
 # manda os dados com o redirect do /uap
 @app.route('/dns', methods=['POST'])                                                                 
@@ -73,8 +162,41 @@ def receive_dns():
 
     data = request.get_json(force=True) 
     data = json.loads(data)
-    print("DNS recebido: ", data["dns"])
-    return "[UAP] Received DNS: " + data["dns"]
+    print(data)
+    print("DNS recebido: ", data)
+    # redirect para o "/"
+    return redirect(url_for('/'))
+
+
+def verify_response(response_received, data_received):
+    # global password
+    if data_received == response_received:
+        return True
+    else:
+        return False
+
+def create_challenge():
+
+    global challenge
+    challenge = str(secrets.randbelow(1000000))
+
+def get_response(received_challenge, challenge):
+    # misturar challenge com password
+    global password
+
+    print("===")
+    print(received_challenge)
+    print(password)
+    print(challenge)
+    print("===")
+
+    if not challenge:
+        challenge = ""
+
+    response = sha256((received_challenge+password+challenge).encode('utf-8')).hexdigest()
+    return response
+
+
 
 if __name__ == '__main__':                                                      
     app.run(host='127.0.0.1',port=5001)

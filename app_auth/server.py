@@ -1,27 +1,33 @@
 import json
+from os import urandom
 import flask
 from flask.app import Flask
 from flask.json import jsonify                   
 import requests               
 from urllib.parse import urlencode
-from Crypto import Random
 from hashlib import sha256
-
+from random import SystemRandom
 from flask import request   
-                                
+from flask import redirect, url_for
+import secrets
 import mysql.connector
+from requests.api import get
 
 
 app = Flask(__name__)  
 
-conn = mysql.connector.connect(user='admin', password='admin',
-                              host='localhost',  # name container
-                              database='spoton')   
+# conn = mysql.connector.connect(user='admin', password='admin',
+#                               host='localhost',  # name container
+#                               database='spoton')   
 
 ECHAP_CURRENT = 0
-ECHAP_MAX = 50
+ECHAP_MAX = 10
 
-challenge = None
+challenge = None    # challenge criado pelo server
+response = None     # resposta para o challenge criado pelo server
+first = True        # re
+valid = True
+password = "seguranca"
 
 # Primeiro passo do protocolo. O Server envia o DNS do site onde o user quer ser autenticado.
 @app.route('/login', methods=['POST', 'GET'])                                                                 
@@ -38,22 +44,107 @@ def login():
         
     return flask.redirect(redirect_link)
 
+
+@app.route('/authentication', methods=['POST', 'GET'])                                                                 
+def authentication():
+    global valid
+    print("autenticaçãoooooooooooooooooooooooooo")
+    if valid:
+        data = "VALIDO"
+    else:
+        data = "INVALIDO"
+    print(data)
+    data = json.dumps(data)
+    res = requests.post('http://127.0.0.1:5001/authentication', json=data)
+    #print(f'Response from UAP: {res.text}')
+    # do outro lado vamos receber a confirmação se o user é válido ou não
+    return "Ok"
+
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
+    global first, response, challenge, ECHAP_CURRENT, ECHAP_MAX, valid
 
-    data = request.get_json(force=True) 
-    data = json.loads(data)
-    # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
+    ECHAP_CURRENT += 1
 
-    pass
+    if ECHAP_CURRENT == ECHAP_MAX:
+        return redirect(url_for('authentication'))
+
+    
+    if first:
+        
+        first = False
+        create_challenge()
+        data = {"challenge": challenge}
+        data = json.dumps(data)
+        response = get_response(challenge, None)
+
+        print("[SERVER] Iteração número " + str(ECHAP_CURRENT) + ":")
+        print(data)
+        print(response)
+        print("=============")
+
+        res = requests.post('http://127.0.0.1:5001/protocol', json=data)
+        return "Ok"
+        
+    else:
+        print("else")
+        data = request.get_json(force=True) 
+        data = json.loads(data)
+
+        challenge_received = data['challenge']
+        response_received = get_response(challenge,challenge_received)    # resposta ao challenge que recebemos
+
+        data_received = data['response']
+        valid = verify_response(response, data_received)
+        
+        old_challenge = challenge
+        payload = {}
+        create_challenge()
+        print(old_challenge)
+        print(challenge_received)
+        response = get_response(challenge_received, old_challenge)
+
+        payload['challenge'] = challenge
+        payload['response'] = response_received
+        data = json.dumps(payload)
+
+        print("[SERVER] Iteração número " + str(ECHAP_CURRENT) + ":")
+        print(payload)
+        print(response)
+        print("=============")
+
+        res = requests.post('http://127.0.0.1:5001/protocol', json=data)
+        return "ok"
+        # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
+
+def verify_response(response, data_received):
+
+    if data_received == response:
+        return True
+    else:
+        return False
+
 
 def create_challenge():
-    challenge = Random.random.choice(100000)
-    return challenge
 
-def get_response(challenge):
+    global challenge
+    challenge = str(secrets.randbelow(1000000))
 
-    response = sha256(challenge.encode('utf-8')).hexdigest()
+def get_response(received_challenge, challenge):
+    # misturar challenge com password
+    global password
+
+
+    print("===")
+    print(received_challenge)
+    print(password)
+    print(challenge)
+    print("===")
+
+    if not challenge:
+        challenge = ""
+
+    response = sha256((received_challenge+password+challenge).encode('utf-8')).hexdigest()
     return response
 
 
@@ -63,17 +154,19 @@ def redirect_uap():
 
     if request.method == 'POST':   
         input_json = request.get_json(force=True) 
-        mail = input_json["mail"]
+        mail = input_json["email"]
         
         cursor = conn.cursor()
 
         cursor.execute(f"SELECT * FROM users WHERE email='{mail}'")
 
         data = cursor.fetchone()
-        cursor.close()
-        
         print("SQL QUERY FOUND:", data)
-        return "porto"
+        cursor.close()
+
+        password = None #recebe a password
+        
+        return redirect(url_for('/protocol'))
     
     else:
         return "cornisse"    
