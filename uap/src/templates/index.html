@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <script src="uap.js"></script>
     <meta charset="UTF-8">
     <title>User Authentication Application</title>
     <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700" rel="stylesheet">
-    <link rel="stylesheet" href="uap.css">
-</head>
+    <link rel="stylesheet" href="{{ url_for('static',filename='styles/uap.css') }}">
+  </head>
 
-<body>
+  <body>
     <form method="POST">
-        <h1>Autenticação</h1>
-        <hr/>
-        <div class="formcontainer">
-            <div class="container"></div>
-            <label for="username"><strong>UsersID</strong></label>
-            <input type="text" id="email" name="email" required>
-            </div>
-            <div class="container">
-            <label for="password"><strong>Password</strong></label>
-            <input type="password" id="pass" name="pass" placeholder="Password" required>
-            </div>
-            <button type="submit" name="bttn">Login</button>
+      <h1>Autenticação</h1>
+      <hr/>
+      <div class="formcontainer">
+        <div class="container">
+          <label for="username"><strong>Email</strong></label>
+          <input type="text" id="email" name="email"  placeholder="Email" value="{{ saved_mail }}">
         </div>
+        <div class="container">
+          <label for="password"><strong>Password</strong></label>
+          <input type="password" id="pass" name="pass" placeholder="Password" value="{{ saved_pass }}">
+        </div>
+        <button type="submit" name="bttn">Login</button>
+      </div>
     </form>
-</body>
+  </body>
+</html>
