@@ -88,6 +88,11 @@ include("connection.php");
     </div>
     <!-- Humberger End -->
 
+
+    <?php
+        $_SESSION['REFERER'] = $_SERVER['HTTP_REFERER']
+    ?>
+
     <!-- Header Section Begin -->
     <header class="header">
         <div class="container">
@@ -108,7 +113,7 @@ include("connection.php");
                 <div class="col-lg-3">
                     <div class="header__cart">
                         <ul>
-                            <li><a href="./login.php" style="color: green"><i class="fa fa-sign-in"></i> Login</a></li>
+                            <li><a href="http://localhost:5002/dns" style="color: green"><i class="fa fa-sign-in"></i> Login</a></li>
                             <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
                             <li><a href="./shoping-cart.php" style="color: green"><i class="fa fa-shopping-cart"></i> Shopping Cart</a></li>
                         </ul>

@@ -1,4 +1,5 @@
 import json
+from logging import disable
 import flask
 from flask.app import Flask
 import requests               
@@ -7,14 +8,24 @@ from flask import request
 from flask import redirect, url_for
 import secrets, hashlib
 import mysql.connector
+import ssl
 
 
 app = Flask(__name__)  
 
-conn = mysql.connector.connect(user='admin', password='admin',
-                              host='localhost',  # name container
-                              port=3307,
-                              database='spoton')   
+conn = mysql.connector.connect(user='admin', 
+                                password='admin',
+                                host='mysql',  # name container
+                                port=3306,
+                                database='spoton',
+                                use_pure=True
+                              )   
+
+if conn.is_connected():
+    print("connected")
+
+print("CONNECTIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
+
 
 dns = None
 ECHAP_CURRENT = 0
@@ -30,13 +41,17 @@ password = None
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():
 
+    print("entrou!")
+
     redirect_link = 'http://127.0.0.1:5002/dns'
     dns = 'http://127.0.0.1:5000'
     
-    data = {"dns": dns}
-    data = json.dumps(data)
-    res = requests.post(redirect_link, json=data)
-    print(f'Response from UAP: {res.text}')
+    # data = {"dns": dns}
+    # data = json.dumps(data)
+    # res = requests.post(redirect_link, json=data)
+    # print(f'Response from UAP: {res.text}')
+
+    request.referrer = dns
     
     return flask.redirect(redirect_link)
 
@@ -189,6 +204,6 @@ def redirect_uap():
     else:
         return "get"    
     
-if __name__ == '__main__':                                                    
-    app.run(host='0.0.0.0',port=5001)
-    print("[SERVER] runningg on 127.0.0.1 5001")
+# if __name__ == '__main__':                                                 
+#     app.run(host='0.0.0.0',port=5001)
+#     print("[SERVER] runningg on 127.0.0.1 5001")

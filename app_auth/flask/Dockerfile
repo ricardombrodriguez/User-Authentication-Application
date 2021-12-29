@@ -1,4 +1,4 @@
-FROM python:3.6
+FROM python:3.8
 
 COPY . /flask/
 
@@ -6,4 +6,6 @@ WORKDIR /flask/
 
 RUN pip3 install -r requirements.txt
 
-CMD ["python3","server.py"]
+EXPOSE 5001
+
+CMD ["flask","run","--host","172.2.0.3","--port","5001"]

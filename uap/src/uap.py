@@ -9,7 +9,8 @@ from flask import redirect, url_for
 
 import json, os,hashlib
 
-import requests   
+import requests
+from requests.sessions import session   
 
 app = Flask(__name__)
 
@@ -191,13 +192,12 @@ def challenge_response():
 
 
 # manda os dados com o redirect do /uap
-@app.route('/dns', methods=['POST'])                                                                 
+@app.route('/dns')                                                                 
 def receive_dns():
     global dns
 
-    data = request.get_json(force=True) 
-    data_json = json.loads(data)
-    dns = data_json["dns"]
+    print(session['REFERER'])
+
     print("DNS recebido: ", dns)
     # redirect para o "/"
     return redirect(url_for('index'))
