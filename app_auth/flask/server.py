@@ -1,24 +1,19 @@
 import json
-from os import urandom
 import flask
 from flask.app import Flask
-from flask.json import jsonify                   
 import requests               
-from urllib.parse import urlencode
 from hashlib import sha256
-from random import SystemRandom
 from flask import request   
 from flask import redirect, url_for
 import secrets
 import mysql.connector
-from requests.api import get
 
 
 app = Flask(__name__)  
 
-conn = mysql.connector.connect(user='admin', password='admin',
-                              host='localhost',  # name container
-                              database='spoton')   
+# conn = mysql.connector.connect(user='admin', password='admin',
+#                               host='localhost',  # name container
+#                               database='spoton')   
 
 ECHAP_CURRENT = 0
 ECHAP_MAX = 10
@@ -33,7 +28,7 @@ password = "seguranca"
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():
 
-    redirect_link = 'http://127.0.0.1:5001/dns'
+    redirect_link = 'http://127.0.0.1:5002/dns'
     dns = 'http://127.0.0.1:5000'
     
     data = dns
@@ -54,7 +49,7 @@ def authentication():
         data = "INVALIDO"
     print(data)
     data = json.dumps(data)
-    res = requests.post('http://127.0.0.1:5001/authentication', json=data)
+    res = requests.post('http://127.0.0.1:5002/authentication', json=data)
     #print(f'Response from UAP: {res.text}')
     # do outro lado vamos receber a confirmação se o user é válido ou não
     return "Ok"
@@ -81,7 +76,7 @@ def challenge_response():
         print("response to my challenge ",response)
         print("=============")
 
-        requests.post('http://127.0.0.1:5001/protocol', json=data)
+        requests.post('http://127.0.0.1:5002/protocol', json=data)
         return "Ok"
         
     else:
@@ -109,7 +104,7 @@ def challenge_response():
         print("response to new challenge ",response)
         print("=============")
 
-        requests.post('http://127.0.0.1:5001/protocol', json=data)
+        requests.post('http://127.0.0.1:5002/protocol', json=data)
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
 
@@ -167,4 +162,5 @@ def redirect_uap():
         return "cornisse"    
     
 if __name__ == '__main__':                                                    
-    app.run(host='127.0.0.1',port=5000 )
+    app.run(host='0.0.0.0',port=5001)
+    print("[SERVER] runningg on 127.0.0.1 5001")

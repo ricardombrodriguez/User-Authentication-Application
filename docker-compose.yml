@@ -8,10 +8,8 @@ volumes:
 services:
 
   website:
-    depends_on:
-        - uap
     container_name: website
-    build: app_auth/api/
+    build: app_auth/
     ports: 
         - "5000:80"
     volumes:
@@ -20,9 +18,16 @@ services:
         - mysql
     restart: always
 
+  flask:
+    build: app_auth/flask/
+    container_name: flask
+    restart: always
+    ports:
+      - "5001:5001"
+
   mysql:
     container_name: spoton
-    image: mysql:latest
+    image: mysql:8.0.0
     command: --default-authentication-plugin=mysql_native_password
     ports:
       - "3000:3306"
@@ -37,11 +42,3 @@ services:
     restart: always
     cap_add:
       - SYS_NICE
-
-  uap:
-    container_name: uap
-    build: ./uap/src
-    ports: 
-      - "5001:5001"
-    volumes:
-      - ./uap/src:/uap/src/

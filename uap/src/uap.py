@@ -58,7 +58,7 @@ def index():
 
         # encripar email????
 
-        requests.post('http://127.0.0.1:5000/uap', json=data)
+        requests.post('http://127.0.0.1:5001/uap', json=data)
         return "Porto 3 - 0 Benfica"
 
     # verificar se existe ou não credenciais para o dns
@@ -70,7 +70,7 @@ def index():
         with open("credentials.json") as credentials:
             data = json.load(credentials)
             data = data[0]
-            dns = 'http://127.0.0.1:5000'
+            dns = 'http://127.0.0.1:5001'
             # Buscar as credenciais
             if dns in data:
                 saved_mail = data[dns]["mail"]
@@ -113,7 +113,7 @@ def challenge_response():
         print("response to my challenge ",response)
         print("=============")
 
-        requests.post('http://127.0.0.1:5000/protocol', json=data)
+        requests.post('http://127.0.0.1:5001/protocol', json=data)
         return "ok"
         
     else:
@@ -142,7 +142,7 @@ def challenge_response():
         print("response to new challenge ",response)
         print("=============")
 
-        requests.post('http://127.0.0.1:5000/protocol', json=data)
+        requests.post('http://127.0.0.1:5001/protocol', json=data)
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
 
@@ -176,12 +176,6 @@ def get_response(received_challenge, mychallenge):
     # misturar challenge com password
     global password
 
-    """ print("===")
-    print(received_challenge)
-    print(password)
-    print(mychallenge)
-    print("===") """
-
     if not mychallenge:
         mychallenge = ""
 
@@ -191,4 +185,5 @@ def get_response(received_challenge, mychallenge):
 
 
 if __name__ == '__main__':                                                      
-    app.run(host='127.0.0.1',port=5001)
+    app.run(host='127.0.0.1',port=5002)
+    print("[UAP] Running on 127.0.0.1:5002")
