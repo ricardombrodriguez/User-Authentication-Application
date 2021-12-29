@@ -84,7 +84,7 @@
 
 							// validar email valido
 							if (!empty($_POST['email']) && filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-								$email = $_POST['email'];
+								// $email = $_POST['email'];
 								$e = true;
 							} else {
 								echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">Error! Invalid email (aaa@bbb.ccc format)</p> </div>";
@@ -99,6 +99,7 @@
 							if(empty($_POST['pass']) || !$uppercase || !$lowercase || !$number || !$specialChars || strlen( $_POST['pass']) < 8) {
 								echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">Error! Invalid password (Password should be at least 8 characters in length and should include at least one upper case letter, one number, and one special character)</p> </div>";
 							}else{
+								$email = md5($_POST['email']);// alterado aqui
 								$pass = md5($_POST['pass']);
 								$p = true;
 							}
