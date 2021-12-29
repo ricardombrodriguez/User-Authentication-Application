@@ -11,16 +11,10 @@ import mysql.connector
 
 app = Flask(__name__)  
 
-<<<<<<< HEAD:app_auth/flask/server.py
-# conn = mysql.connector.connect(user='admin', password='admin',
-#                               host='localhost',  # name container
-#                               database='spoton')   
-=======
 conn = mysql.connector.connect(user='admin', password='admin',
                               host='localhost',  # name container
                               port=3307,
                               database='spoton')   
->>>>>>> 3097b6e5071d08228e561614b2cdb5247a496526:app_auth/server.py
 
 dns = None
 ECHAP_CURRENT = 0
@@ -196,9 +190,5 @@ def redirect_uap():
         return "get"    
     
 if __name__ == '__main__':                                                    
-<<<<<<< HEAD:app_auth/server.py
-    app.run(host='0.0.0.0',port=5000)
-=======
     app.run(host='0.0.0.0',port=5001)
     print("[SERVER] runningg on 127.0.0.1 5001")
->>>>>>> 90530deb15492ee57fb5293c387d4fbb1f623734:app_auth/flask/server.py
