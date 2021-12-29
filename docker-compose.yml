@@ -16,6 +16,9 @@ services:
         - ./app_auth/:/var/www/html/
     links:
         - mysql
+    networks:
+      network:
+        ipv4_address: 172.2.0.2
     restart: always
 
   flask:
@@ -24,13 +27,20 @@ services:
     restart: always
     ports:
       - "5001:5001"
+    environment:
+      - FLASK_APP=server
+    links:
+      - mysql
+    networks:
+      network:
+        ipv4_address: 172.2.0.3
 
   mysql:
     container_name: spoton
     image: mysql:8.0.0
     command: --default-authentication-plugin=mysql_native_password
     ports:
-      - "3307:3306"
+      - "3306:3306"
     environment:
       - MYSQL_DATABASE=spoton
       - MYSQL_USER=admin
@@ -40,5 +50,15 @@ services:
       - datafiles:/var/lib/mysql
       - ./app_auth/api/db/spoton.sql:/docker-entrypoint-initdb.d/spoton.sql
     restart: always
+    networks:
+      network:
+        ipv4_address: 172.2.0.4
     cap_add:
       - SYS_NICE
+
+networks:
+  network:
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.2.0.0/16
