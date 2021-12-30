@@ -29,6 +29,8 @@ services:
       - "5001:5001"
     environment:
       - FLASK_APP=server
+      - FLASK_ENV=development
+      - PYTHONUNBUFFERED=1
     links:
       - mysql
     networks:
