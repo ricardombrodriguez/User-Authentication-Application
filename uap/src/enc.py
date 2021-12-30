@@ -1,5 +1,5 @@
+import json
 import os
-import sys
 import secrets
 import binascii
 from Crypto.Hash import SHA256
@@ -7,37 +7,52 @@ from backports.pbkdf2 import pbkdf2_hmac
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 
-def encrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
-    
-    if not os.path.exists(infile):
-        print(f"Infile {infile} not found")
+def encrypt(infile, outfile, password, salt, algorithm='AES', mode='ECB', iv=None):
+
+    if not os.path.exists(outfile):
+        print(f"[ERROR] File {outfile} not found")
         return
     
-    ''' if os.path.exists(outfile):
-        r = input(f"Overwrite outfile: {outfile}? ")
-        if r.upper != 'Y':
-            return '''
-            
-    # iv = None
-    key = SHA256.new(key).digest()
-    # print("key in encrypt", key)
-        
-    # supported algorithms
+    password = password.encode('utf-8').strip()
+    iterations = 100000
+    key = binascii.hexlify(pbkdf2_hmac("sha256", password, salt, iterations, 32))
+    print(key)
+    dkey = SHA256.new(key).digest()
+    print(dkey)
+
     block_size = 256
     block_size = algorithms.AES.block_size // 8
     cmode = modes.ECB()
-    cipher = Cipher(algorithms.AES(key), cmode, backend=default_backend())
-
-    ''' if iv is not None: # added for cipher mode
-        with open(outfile+'.iv', 'wb') as f:
-            f.write(iv) '''
+    cipher = Cipher(algorithms.AES(dkey), cmode, backend=default_backend())
             
-    fi = open(infile, 'rb')
+    fi = json.dumps(infile)
+    print(fi)
     fo = open(outfile, 'wb')
     
     encryptor = cipher.encryptor()
+
+    binary = ' '.join(format(ord(letter), 'b') for letter in fi)
+    total_bytes = len(binary)
+    print("total bytes", total_bytes)
+
+    print("X:")
+    for x in range(0, total_bytes, 16):
+        print(x)
+        print(len(binary))
+        if len(binary) < 16:
+            print("len menor que 16")
+            missing_len = 16 - len(binary)
+            binary += bytes([missing_len]*missing_len)
+            cryptogram = encryptor.update(binary) + encryptor.finalize()
+            fo.write(cryptogram)
+        
+        block = binary[x:x+16]
+        bin_block = bytes(block,'UTF-8')
+        cryptogram = encryptor.update(bin_block)
+        #binary = binary[x+16:]
+        fo.write(cryptogram)
     
-    while True:
+    """     while True:
         text = fi.read(block_size)
         if len(text) != 16:
             missing_len = 16 - len(text)
@@ -47,89 +62,82 @@ def encrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
             break
     
         cryptogram = encryptor.update(text)
-        fo.write(cryptogram)
-        
-        
-    #fo.write("\n".encode())
-    
+        fo.write(cryptogram) """
+
     print("Data encrypted")
-    
-    fi.close()
+
     fo.close()
     
-    return iv
+    return fo
 
 
-def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
+def decrypt(infile, password, algorithm='AES', mode='ECB'):
     
     if not os.path.exists(infile):
-        print(f"Infile {infile} not found")
+        print(f"[ERROR] File {infile} not found")
         return
     
-    ''' if os.path.exists(outfile):
-        r = input(f"Overwrite outfile: {outfile}? ")
-        if r.upper != 'Y':
-            return '''
-        
-    # iv = None
-    key = SHA256.new(key).digest()
+    password = password.encode('utf-8').strip()
+    salt = bytes(secrets.token_hex(8), encoding="utf8")
+    iterations = 100000
+    key = binascii.hexlify(pbkdf2_hmac("sha256", password, salt, iterations, 32))
+    print(key)
+    dkey = SHA256.new(key).digest()
+    print(dkey)
 
-    # supported algorithms
     block_size = 256
     block_size = algorithms.AES.block_size // 8
     cmode = modes.ECB()
-    cipher = Cipher(algorithms.AES(key), cmode, backend=default_backend())
-        
-    '''if iv is not None: # added for cipher mode
-        with open(outfile+'.iv', 'wb') as f:
-            f.write(iv) '''
-        
+    cipher = Cipher(algorithms.AES(dkey), cmode, backend=default_backend())
     
     fi = open(infile, 'rb')
-    fo = open(outfile, 'wb')
     decryptor = cipher.decryptor()
     
     total_bytes = os.path.getsize(infile) 
     read_bytes = 0
+
+    print("total bytes")
+    print(total_bytes)
+
+    content = ""
     
     while True:
-        cgram = fi.read(block_size)
+        cgram = fi.read(16)
         read_bytes += len(cgram)
         if read_bytes == total_bytes:
-            # this is the last block
+            # padding block
+            print("padding block")
             text = decryptor.update(cgram)
+            if not text: break
             padding = text[-1]
             text = text[0:block_size - padding]
-            fo.write(text)
+            content += text.decode("utf-8")
             break
+        else:
+            print("reading...")
     
         text = decryptor.update(cgram)
-        fo.write(text)
+        print("--------> TEXT ", text)
+        content += text.decode("utf-8")
     
     print("Data decrypted")
-    
-    fi.close()
-    fo.close()
+    print(content)
+    print(type(content))
+    fi.close()dd
+    if content:
+        content = json.loads(content)
+    return (content, salt)
 
     
 
-if __name__ == "__main__":
-    
-    # TODO : fazer que user faça input da key
-    #! PROBLEM : a key tem de ser de 16, 32, 64, ... bytes, ou seja, n pode ser qqlr uma
-    # TO RUN: python3 enc.py credentials.json password       ---- acho q ja consegui
-    
-    #key = os.urandom(16)
+""" if __name__ == "__main__":
+
     message = sys.argv[1]
     password = sys.argv[2].encode('utf-8').strip()
-    # print("pw :", password)
-    
-    # to derive a key from a password using the PBKDF2 algorithm
-    salt = bytes(secrets.token_hex(8), encoding="utf8") # random salt for each encryption
-    print("salt :", salt)
-    iterations = 50000
-    key = binascii.hexlify(pbkdf2_hmac("sha256", password, salt, iterations, 64))
-    # print("key derived from pw :", key)
+
+    salt = bytes(secrets.token_hex(8), encoding="utf8")
+    iterations = 100000
+    key = binascii.hexlify(pbkdf2_hmac("sha256", password, salt, iterations, 32))
     
     with open("supersecret.txt", 'a') as ss:
         ss.write("password given: " + password.decode() +"\n")
@@ -138,10 +146,7 @@ if __name__ == "__main__":
         ss.write("iterations: " + str(iterations) + "\n\n")
     
     algorithm = 'AES'
-    # encrypt(message, message+".cgram", key, algorithm)
-    # decrypt(message+".cgram", message+".txt", key, algorithm)
 
-    # added for cipher mode
     m = message.split(".")[0] + '.ecb'
     dm = m + '.bmp'
     #m2 = message+'.cbc' 
@@ -149,10 +154,11 @@ if __name__ == "__main__":
     
     encrypt(message, m, key, algorithm, 'ECB')
     
-    r = input(f"Want to decrypt: {message}? ")
+    r = input(f"Want to decrypt {message}? ")
     if r.upper != 'Y': 
         decrypt(m, dm, key, algorithm, 'ECB')
     else:
         print("goodbye!")
     #iv = encrypt(message, m2, key, algorithm, 'CBC')
     #decrypt(m2, dm2, key, algorithm, 'CBC', iv)
+ """

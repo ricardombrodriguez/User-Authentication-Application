@@ -6,6 +6,7 @@ from flask import request
 from flask import render_template     
 import secrets                                     
 from flask import redirect, url_for
+import enc
 
 import json, os,hashlib
 
@@ -14,7 +15,7 @@ from requests.sessions import session
 
 app = Flask(__name__)
 
-dns = "http://localhost:5000"
+dns = "http://172.2.0.2"
 challenge = None    # challenge criado pelo server
 response = None     # resposta para o challenge criado pelo server
 first = True        
@@ -24,18 +25,37 @@ password = None
 email = None
 reset = False
 redirect_site = False
+pass_to_encrypt = None
 
 @app.route('/', methods=['POST', 'GET'])                                                                 
-def index():                 
-    global password, email, dns, is_valid, reset, first, redirect_site
+def index(): 
+    global pass_to_encrypt
 
+    if request.method == 'GET':
+        return render_template('index.html')
+
+    elif request.method == 'POST':
+        pass1 = request.form['pass_to_encrypt']
+        pass2 = request.form['pass_to_encrypt1']
+
+        if pass1 != pass2:
+            return render_template('index.html', valid=False)
+
+        elif pass1 == pass2:
+            pass_to_encrypt = pass1
+            return redirect(url_for("login"))
+
+
+@app.route('/login', methods=['POST', 'GET'])                                                                 
+def login():                 
+    global password, email, dns, is_valid, reset, first, redirect_site
 
     saved_mail = ""
     saved_pass = ""
 
     #receber o dns
     if request.method == 'GET':
-        with open("credentials.json") as credentials:
+        """ with open("credentials.json") as credentials:
             data = json.load(credentials)
             
             if data:
@@ -45,8 +65,8 @@ def index():
                 if dns in data:
                     saved_mail = data[dns]["mail"]
                     saved_pass = data[dns]["pass"]
-
-        return render_template('index.html' , saved_mail=saved_mail, saved_pass=saved_pass, is_valid=is_valid)
+        """
+        return render_template('login.html' , saved_mail=saved_mail, saved_pass=saved_pass, is_valid=is_valid)
     
     # login
     elif request.method == 'POST':
@@ -71,46 +91,45 @@ def index():
             redirect_site = False
             return redirect("http://172.2.0.2")
 
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
 
 @app.route('/authentication', methods=['POST', 'GET'])                                                                 
 def authentication():
-    global is_valid, email, password, dns, valid, first, challenge, response, reset, redirect_site
+    global is_valid, email, password, dns, valid, first, challenge, response, reset, redirect_site, pass_to_encrypt
     
     # se a uap estiver válida para o server (is_valid) e se o server estiver válido para a uap (valid)
     if is_valid and valid:
 
         print("all valid")
 
-        with open("credentials.json", "w+") as credentials:
-            lines = credentials.readlines()
-            if lines != []:
-                data = json.load(credentials)
-                data = data[0]
-                print(data)
-                # Buscar as credenciais
-                # TODO encriptar e isso...
-                if dns in data:
-                    data[dns]["mail"] = email
-                    data[dns]["pass"] = password
-                
-                else:
-                    list(data).append( json.dumps(f"{{'{dns}': {{'mail': '{email}', 'pass': '{password}'}} }}"))
-                    credentials.write(json.dumps(data))
+        # DECRYPT, GET CREDENTIALS AND ENCRYPT WITH PASSWORD
+        content, salt = enc.decrypt("credentials.json", pass_to_encrypt)
+        if content:
+
+            new_cred = {"mail":email, "pass": password}
+            new_cred = json.dumps(new_cred)
+
+            if dns in content[0]:
+                content[0][dns].append(new_cred)
             else:
-                data = json.dumps(f"{{'{dns}': {{'mail': '{email}', 'pass': '{password}'}} }}")
-                credentials.write(json.dumps(data))
+                content[0][dns] = [new_cred]
 
+        else:
+            new_cred = [{dns:{"mail":email, "pass": password}}]
+            content = json.dumps(new_cred)
+
+        # encriptar o ficheiro
+        enc.encrypt(content,"credentials.json",pass_to_encrypt,salt)
+        
         reset_variables()
-
         redirect_site = True
         
     else:
         reset_variables()
         is_valid = False    
 
-        return redirect(url_for('index'))
+        return redirect(url_for('login'))
 
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
@@ -227,7 +246,7 @@ def receive_dns():
 
     print("DNS recebido: ", dns)
     # redirect para o "/"
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
 
 def reset_variables():
