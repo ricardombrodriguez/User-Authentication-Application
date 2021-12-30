@@ -1,3 +1,5 @@
 flask
 requests
 mysql-connector-python
+pycryptodome
+backports.pbkdf2

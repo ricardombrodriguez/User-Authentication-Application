@@ -10,21 +10,21 @@
 
   <body>
     <form method="POST">
-      <h1>Autenticação</h1>
+      <h1>Password para encriptação</h1>
       <hr/>
       <div class="formcontainer">
         <div class="container">
-          <label for="username"><strong>Email</strong></label>
-          <input type="text" id="email" name="email"  placeholder="Email" value="{{ saved_mail }}">
-        </div>
-        <div class="container">
-          <label for="password"><strong>Password</strong></label>
-          <input type="password" id="pass" name="pass" placeholder="Password" value="{{ saved_pass }}">
-        </div>
-        <button type="submit" name="bttn" value="Submit">Login</button>
+        <label for="password"><strong>Insira uma Password</strong></label>
+        <input type="password" id="pass_to_encrypt" name="pass_to_encrypt" placeholder="Password" >
       </div>
-      {% if is_valid == False %} 
-      <p style="color: red;">Invalid credentials. Try again.</p>
+        <div class="container">
+          <label for="password"><strong>Insira novamente a Password</strong></label>
+          <input type="password" id="pass_to_encrypt1" name="pass_to_encrypt1" placeholder="Password">
+        </div>
+        <button type="submit" name="bttn">Continuar</button>
+      </div>
+      {% if valid == False %} 
+      <p style="color: red;">Passwords doesn't match. Try again.</p>
       {% endif %}
     </form>
   </body>

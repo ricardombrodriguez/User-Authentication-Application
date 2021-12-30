@@ -1,5 +1,5 @@
+import json
 import os
-import sys
 import secrets
 import binascii
 from Crypto.Hash import SHA256
@@ -59,7 +59,7 @@ def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
 def encrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
     
     if not os.path.exists(infile):
-        print(f"Infile {infile} not found")
+        print(f"[ERROR] File {infile} not found")
         return
 
     digestkey = SHA256.new(key).digest()
@@ -83,6 +83,8 @@ def encrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
             cryptogram = encryptor.update(text) + encryptor.finalize()
             fo.write(cryptogram)
             break
+        else:
+            print("reading...")
     
         cryptogram = encryptor.update(text)
         fo.write(cryptogram)
