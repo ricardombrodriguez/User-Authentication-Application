@@ -113,6 +113,8 @@ def challenge_response():
 
     print("protocol")
 
+    # a uap vai deixar de ter o echap current e chega a uma altura em que vai receber a resposta do server a dizer se é valid ou n
+
     ECHAP_CURRENT += 1
     
     if ECHAP_CURRENT == ECHAP_MAX:
@@ -135,20 +137,17 @@ def challenge_response():
         payload = {'response': random_response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        res = requests.post('http:/172.2.0.3:5001/protocol', json=data)
+        res = requests.post('http://172.2.0.3:5001/protocol', json=data)
 
-        requests.post('http://localhost:5002/protocol', json=json.dumps(res))
+        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
         
         return "ok"
 
     if first:
         first = False
         data = request.get_json(force=True)
-        data = json.loads(data)
-        data = json.loads(data)
-
+        data = json.loads(json.loads(data))
         print("dados recebidos no first:")
-        print(type(data))
         print(data)
 
         # recebido
@@ -168,9 +167,9 @@ def challenge_response():
         print("response to my challenge ",response)
         print("=============")
 
-        res = requests.post('http:/172.2.0.3:5001/protocol', json=data)
+        res = requests.post('http://172.2.0.3:5001/protocol', json=data)
 
-        requests.post('http://localhost:5002/protocol', json=json.dumps(res))
+        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         return "ok"
         
@@ -178,7 +177,8 @@ def challenge_response():
         print("else")
         data = request.get_json(force=True) 
         data = json.loads(data)
-
+        data = json.loads(data)
+        
         challenge_received = data['new_challenge']
         # response_to_challenge_received = get_response(challenge_received, challenge)    # resposta ao challenge que recebemos
         response_to_challenge_received = get_response(challenge, challenge_received)      # resposta ao challenge que recebemos
@@ -201,9 +201,9 @@ def challenge_response():
         print("response to new challenge ",response)
         print("=============")
 
-        res = requests.post('http:/172.2.0.3:5001/protocol', json=data)
+        res = requests.post('http://172.2.0.3:5001/protocol', json=data)
 
-        requests.post('http://localhost:5002/protocol', json=json.dumps(res))
+        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...

@@ -24,15 +24,12 @@ conn = mysql.connector.connect(user='admin',
 if conn.is_connected():
     print("connected")
 
-print("CONNECTIONNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN")
-
 
 dns = None
 ECHAP_CURRENT = 0
 ECHAP_MAX = 10
 challenge = None    # challenge criado pelo server
-response = None     # resposta para o challenge criado pelo server
-first = True        
+response = None     # resposta para o challenge criado pelo server    
 valid = True        # o user que estamos a autenticar é valido ou não
 is_valid = True     # variavel controlo para autenticar se user valido ou não
 password = None
@@ -43,8 +40,8 @@ def login():
 
     print("entrou!")
 
-    redirect_link = 'http://127.0.0.1:5002/dns'
-    dns = 'http://127.0.0.1:5000'
+    redirect_link = 'http://localhost:5002/dns'
+    dns = 'http://localhost:5000'
     
     # data = {"dns": dns}
     # data = json.dumps(data)
@@ -64,14 +61,14 @@ def authentication():
         data = "INVALIDO"
     print(data)
     """ data = json.dumps(data)
-    res = requests.post('http://127.0.0.1:5002/authentication', json=data) """
+    res = requests.post('http://localhost:5002/authentication', json=data) """
     #print(f'Response from UAP: {res.text}')
     # do outro lado vamos receber a confirmação se o user é válido ou não
     return "Ok"
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-    global first, response, challenge, ECHAP_CURRENT, ECHAP_MAX, valid, is_valid
+    global response, challenge, ECHAP_CURRENT, ECHAP_MAX, valid, is_valid
 
     ECHAP_CURRENT += 1
     
@@ -86,18 +83,15 @@ def challenge_response():
         
         payload = {'response': random_response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
-
-        requests.post('http://127.0.0.1:5001/protocol', json=data)
         
         if ECHAP_CURRENT == ECHAP_MAX:
             print("[SERVER] VALID: " + str(valid))
-            first = True
             is_valid = valid
             valid = True
             ECHAP_CURRENT = int(0)
             return redirect(url_for('authentication'))
         
-        return "ok"
+        return data
     
     # if first:
     #     first = False
@@ -111,7 +105,7 @@ def challenge_response():
     #     print("response to my challenge ",response)
     #     print("=============")
 
-    #     # requests.post('http://127.0.0.1:5002/protocol', json=data)
+    #     # requests.post('http://localhost:5002/protocol', json=data)
     #     return data
         
     else:
@@ -140,11 +134,10 @@ def challenge_response():
         print("response to new challenge ",response)
         print("=============")
 
-        # requests.post('http://127.0.0.1:5002/protocol', json=data)
+        # requests.post('http://localhost:5002/protocol', json=data)
         
         if ECHAP_CURRENT == ECHAP_MAX:
             print("[SERVER] VALID: " + str(valid))
-            first = True
             is_valid = valid
             valid = True
             ECHAP_CURRENT = int(0)
@@ -179,10 +172,10 @@ def random_response():
     response = sha256((str(secrets.randbelow(1000000))).encode('utf-8')).hexdigest()
     return response
 
-# retornar o DNS do server para a UAP saber | "http://127.0.0.1:5000/uap"
+# retornar o DNS do server para a UAP saber | "http://localhost:5000/uap"
 @app.route('/uap', methods=['POST', 'GET'])                                                                 
 def redirect_uap():    
-    global password, first, challenge, response
+    global password, challenge, response, ECHAP_CURRENT
 
     if request.method == 'POST':   
         data = request.get_json(force=True) 
@@ -198,6 +191,7 @@ def redirect_uap():
         
         password = data[3]     # atualiza a password
 
+        ECHAP_CURRENT += 1
         create_challenge()
         data = {"challenge": challenge}
         data = json.dumps(data)
