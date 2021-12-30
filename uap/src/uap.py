@@ -14,7 +14,7 @@ from requests.sessions import session
 
 app = Flask(__name__)
 
-dns = None
+dns = "http://localhost:5000"
 ECHAP_CURRENT = 0
 ECHAP_MAX = 10
 challenge = None    # challenge criado pelo server
@@ -32,6 +32,7 @@ def index():
 
     # login
     if request.method == 'POST':
+
         print("post")
         email =  hashlib.md5(request.form['email'].encode()).hexdigest()
         password = hashlib.md5(request.form['pass'].encode()).hexdigest()
@@ -45,8 +46,11 @@ def index():
 
         # encripar email????
 
-        requests.post('http://127.0.0.1:5001/uap', json=data)
-        return "Porto 3 - 0 Benfica"
+        res = requests.post('http://172.2.0.3:5001/uap', json=data)
+
+        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
+
+        return "login sent"
 
     # verificar se existe ou não credenciais para o dns
     else:
@@ -97,7 +101,7 @@ def authentication():
         valid = "INVALIDO"
     print(valid)
     # data = json.dumps(data)
-    # res = requests.post('http://127.0.0.1:5000/authentication', json=data)
+    # res = requests.post('http:/172.2.0.3:5000/authentication', json=data)
     
     #print(f'Response from UAP: {res.text}')
     # do outro lado vamos receber a confirmação se o user é válido ou não
@@ -106,6 +110,8 @@ def authentication():
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
     global first, valid, is_valid, response, challenge, ECHAP_CURRENT, ECHAP_MAX
+
+    print("protocol")
 
     ECHAP_CURRENT += 1
     
@@ -129,14 +135,21 @@ def challenge_response():
         payload = {'response': random_response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        requests.post('http://127.0.0.1:5000/protocol', json=data)
+        res = requests.post('http:/172.2.0.3:5001/protocol', json=data)
+
+        requests.post('http://localhost:5002/protocol', json=json.dumps(res))
         
         return "ok"
 
     if first:
         first = False
-        data = request.get_json(force=True) 
+        data = request.get_json(force=True)
         data = json.loads(data)
+        data = json.loads(data)
+
+        print("dados recebidos no first:")
+        print(type(data))
+        print(data)
 
         # recebido
         challenge_received = data['challenge']
@@ -155,7 +168,10 @@ def challenge_response():
         print("response to my challenge ",response)
         print("=============")
 
-        requests.post('http://127.0.0.1:5001/protocol', json=data)
+        res = requests.post('http:/172.2.0.3:5001/protocol', json=data)
+
+        requests.post('http://localhost:5002/protocol', json=json.dumps(res))
+
         return "ok"
         
     else:
@@ -185,7 +201,10 @@ def challenge_response():
         print("response to new challenge ",response)
         print("=============")
 
-        requests.post('http://127.0.0.1:5001/protocol', json=data)
+        res = requests.post('http:/172.2.0.3:5001/protocol', json=data)
+
+        requests.post('http://localhost:5002/protocol', json=json.dumps(res))
+
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
 
@@ -195,8 +214,6 @@ def challenge_response():
 @app.route('/dns')                                                                 
 def receive_dns():
     global dns
-
-    print(session['REFERER'])
 
     print("DNS recebido: ", dns)
     # redirect para o "/"

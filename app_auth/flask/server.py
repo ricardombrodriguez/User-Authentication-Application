@@ -50,8 +50,6 @@ def login():
     # data = json.dumps(data)
     # res = requests.post(redirect_link, json=data)
     # print(f'Response from UAP: {res.text}')
-
-    request.referrer = dns
     
     return flask.redirect(redirect_link)
 
@@ -101,20 +99,20 @@ def challenge_response():
         
         return "ok"
     
-    if first:
-        first = False
-        create_challenge()
-        data = {"challenge": challenge}
-        data = json.dumps(data)
-        response = get_response(challenge, None)
+    # if first:
+    #     first = False
+    #     create_challenge()
+    #     data = {"challenge": challenge}
+    #     data = json.dumps(data)
+    #     response = get_response(challenge, None)
 
-        print("[SERVER] Iteração número " + str(ECHAP_CURRENT) + ":")
-        print(data)
-        print("response to my challenge ",response)
-        print("=============")
+    #     print("[SERVER] Iteração número " + str(ECHAP_CURRENT) + ":")
+    #     print(data)
+    #     print("response to my challenge ",response)
+    #     print("=============")
 
-        requests.post('http://127.0.0.1:5002/protocol', json=data)
-        return "Ok"
+    #     # requests.post('http://127.0.0.1:5002/protocol', json=data)
+    #     return data
         
     else:
         print("else")
@@ -142,7 +140,7 @@ def challenge_response():
         print("response to new challenge ",response)
         print("=============")
 
-        requests.post('http://127.0.0.1:5002/protocol', json=data)
+        # requests.post('http://127.0.0.1:5002/protocol', json=data)
         
         if ECHAP_CURRENT == ECHAP_MAX:
             print("[SERVER] VALID: " + str(valid))
@@ -152,7 +150,7 @@ def challenge_response():
             ECHAP_CURRENT = int(0)
             return redirect(url_for('authentication'))
         
-        return "ok"
+        return data
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
 
 def verify_response(response, data_received):
@@ -184,7 +182,8 @@ def random_response():
 # retornar o DNS do server para a UAP saber | "http://127.0.0.1:5000/uap"
 @app.route('/uap', methods=['POST', 'GET'])                                                                 
 def redirect_uap():    
-    global password
+    global password, first, challenge, response
+
     if request.method == 'POST':   
         data = request.get_json(force=True) 
         input_json = json.loads(data)
@@ -198,12 +197,17 @@ def redirect_uap():
         cursor.close()
         
         password = data[3]     # atualiza a password
-        
-        return redirect(url_for('challenge_response'))
-    
+
+        create_challenge()
+        data = {"challenge": challenge}
+        data = json.dumps(data)
+        response = get_response(challenge, None)
+        print("[SERVER] Iteração número " + str(ECHAP_CURRENT) + ":")
+        print(data)
+        print("response to my challenge ",response)
+        print("=============")
+
+        return data
+            
     else:
         return "get"    
-    
-# if __name__ == '__main__':                                                 
-#     app.run(host='0.0.0.0',port=5001)
-#     print("[SERVER] runningg on 127.0.0.1 5001")
