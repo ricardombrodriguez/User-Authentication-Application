@@ -1,6 +1,5 @@
 import os
 import sys
-import uuid
 import secrets
 import binascii
 from Crypto.Hash import SHA256
