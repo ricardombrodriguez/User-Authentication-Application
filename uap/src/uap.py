@@ -15,25 +15,42 @@ from requests.sessions import session
 app = Flask(__name__)
 
 dns = "http://localhost:5000"
-ECHAP_CURRENT = 0
-ECHAP_MAX = 10
 challenge = None    # challenge criado pelo server
 response = None     # resposta para o challenge criado pelo server
 first = True        
 valid = True        # o user que estamos a autenticar é valido ou não
-is_valid = True     # variavel controlo para autenticar se user valido ou não
+is_valid = None     # variavel controlo para autenticar se user valido ou não
 password = None
 email = None
+reset = False
+redirect_site = False
 
 @app.route('/', methods=['POST', 'GET'])                                                                 
 def index():                 
-    global password, email, dns
+    global password, email, dns, is_valid, reset, first, redirect_site
+
+
+    saved_mail = ""
+    saved_pass = ""
+
     #receber o dns
+    if request.method == 'GET':
+        with open("credentials.json") as credentials:
+            data = json.load(credentials)
+            
+            if data:
+                data = data[0]
+                
+                # Buscar as credenciais
+                if dns in data:
+                    saved_mail = data[dns]["mail"]
+                    saved_pass = data[dns]["pass"]
 
+        return render_template('index.html' , saved_mail=saved_mail, saved_pass=saved_pass, is_valid=is_valid)
+    
     # login
-    if request.method == 'POST':
+    elif request.method == 'POST':
 
-        print("post")
         email =  hashlib.md5(request.form['email'].encode()).hexdigest()
         password = hashlib.md5(request.form['pass'].encode()).hexdigest()
         
@@ -50,34 +67,22 @@ def index():
 
         requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
-        return "login sent"
+        if redirect_site:
+            redirect_site = False
+            return redirect("http://172.2.0.2")
 
-    # verificar se existe ou não credenciais para o dns
-    else:
+        return redirect(url_for('index'))
 
-        saved_mail = ""
-        saved_pass = ""
-
-        with open("credentials.json") as credentials:
-            data = json.load(credentials)
-            
-            if data:
-                data = data[0]
-                
-                # Buscar as credenciais
-                if dns in data:
-                    saved_mail = data[dns]["mail"]
-                    saved_pass = data[dns]["pass"]
-                
-            
-        return render_template('index.html' , saved_mail=saved_mail, saved_pass=saved_pass)
 
 @app.route('/authentication', methods=['POST', 'GET'])                                                                 
 def authentication():
-    global is_valid, email, password, dns
+    global is_valid, email, password, dns, valid, first, challenge, response, reset, redirect_site
     
-    if is_valid:
-        valid = "VALIDO"
+    # se a uap estiver válida para o server (is_valid) e se o server estiver válido para a uap (valid)
+    if is_valid and valid:
+
+        print("all valid")
+
         with open("credentials.json", "w+") as credentials:
             lines = credentials.readlines()
             if lines != []:
@@ -96,34 +101,25 @@ def authentication():
             else:
                 data = json.dumps(f"{{'{dns}': {{'mail': '{email}', 'pass': '{password}'}} }}")
                 credentials.write(json.dumps(data))
-            
+
+        reset_variables()
+
+        redirect_site = True
+        
     else:
-        valid = "INVALIDO"
-    print(valid)
-    # data = json.dumps(data)
-    # res = requests.post('http:/172.2.0.3:5000/authentication', json=data)
-    
-    #print(f'Response from UAP: {res.text}')
-    # do outro lado vamos receber a confirmação se o user é válido ou não
-    return "Ok"
+        reset_variables()
+        is_valid = False    
+
+        return redirect(url_for('index'))
+
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-    global first, valid, is_valid, response, challenge, ECHAP_CURRENT, ECHAP_MAX
+    global first, valid, is_valid, response, challenge
 
     print("protocol")
 
     # a uap vai deixar de ter o echap current e chega a uma altura em que vai receber a resposta do server a dizer se é valid ou n
-
-    ECHAP_CURRENT += 1
-    
-    if ECHAP_CURRENT == ECHAP_MAX:
-        print("[UAP] VALID: " + str(valid))
-        first = True
-        is_valid = valid
-        valid = True
-        ECHAP_CURRENT = int(0)
-        return redirect(url_for('authentication'))
 
     if not valid:
         print("RANDOM")
@@ -138,6 +134,12 @@ def challenge_response():
         data = json.dumps(payload)
 
         res = requests.post('http://172.2.0.3:5001/protocol', json=data)
+
+        data = json.loads(res.text)
+
+        if 'valid' in data:
+            is_valid = data['valid']
+            return redirect(url_for('authentication'))
 
         requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
         
@@ -161,7 +163,7 @@ def challenge_response():
         payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        print("[UAP] Iteração número " + str(ECHAP_CURRENT) + ":")
+        print("[UAP] Iteração: ")
         print("challenge received: " + challenge_received)
         print(payload)
         print("response to my challenge ",response)
@@ -195,13 +197,21 @@ def challenge_response():
         payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        print("[UAP] Iteração número " + str(ECHAP_CURRENT) + ":")
+        print("[UAP] Iteração número:")
         print("challenge received: " + challenge_received)
         print(payload)
         print("response to new challenge ",response)
         print("=============")
 
         res = requests.post('http://172.2.0.3:5001/protocol', json=data)
+
+        data = json.loads(res.text)
+
+        if 'valid' in data:
+            is_valid = data['valid']
+            print("is valid")
+            print(is_valid)
+            return redirect(url_for('authentication'))
 
         requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
@@ -219,6 +229,14 @@ def receive_dns():
     # redirect para o "/"
     return redirect(url_for('index'))
 
+
+def reset_variables():
+    global challenge, response, first, valid, is_valid, password, email
+    response = None
+    first = True        
+    valid = True        
+    password = None
+    email = None
 
 def verify_response(response_received, data_received):
     # global password
