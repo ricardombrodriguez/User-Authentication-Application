@@ -27,6 +27,7 @@ reset = False
 redirect_site = False
 pass_to_encrypt = None
 key_to_decrypt = None
+token = None
 
 @app.route('/', methods=['POST', 'GET'])                                                                 
 def index(): 
@@ -49,7 +50,7 @@ def index():
 
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():                 
-    global password, email, dns, is_valid, reset, first, redirect_site, key_to_decrypt, pass_to_encrypt
+    global password, email, dns, is_valid, reset, first, redirect_site, key_to_decrypt, pass_to_encrypt, token
 
     saved_mail = ""
     saved_pass = ""
@@ -57,11 +58,8 @@ def login():
     #receber o dns
     if request.method == 'GET':
 
-        if key_to_decrypt:
+        """ if key_to_decrypt:
             enc.decrypt("credentials.json", "credentials.json", key_to_decrypt)
-            
-            print("seferovic")
-            # exit(0)
 
             with open("credentials.json", 'r+') as f:
                     content = f.readlines()
@@ -73,7 +71,7 @@ def login():
                             saved_mail = content[0][dns][0]["mail"]
                             saved_pass = content[0][dns][0]["pass"]
 
-            key_to_decrypt = enc.encrypt("credentials.json", "credentials.json", pass_to_encrypt)
+            key_to_decrypt = enc.encrypt("credentials.json", "credentials.json", pass_to_encrypt) """
 
         return render_template('login.html' , saved_mail=saved_mail, saved_pass=saved_pass, is_valid=is_valid)
     
@@ -94,7 +92,13 @@ def login():
         requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         if redirect_site:
-            redirect_site = False
+
+            # fazer um post com um token e o email
+
+            data = {'token_uap':token}
+
+            requests.post('http://172.2.0.2:80/', json=json.dumps(data))
+
             return redirect("http://172.2.0.2")
 
         return redirect(url_for('login'))
@@ -108,29 +112,32 @@ def authentication():
     if is_valid and valid:
 
         print("all valid")
-
-        # encriptar o ficheiro
-        # enc.encrypt(content,"credentials.json", pass_to_encrypt)
+        """
 
         # DECRYPT, GET CREDENTIALS AND ENCRYPT WITH PASSWORD
-        enc.decrypt("credentials.json", "credentials.json", key_to_decrypt)
-        
-        with open("credentials.json", 'r+') as f:
-            content = f.readline()
+        print("key to decrypt ", key_to_decrypt)
+         
+        enc.decrypt("credentials.txt", "credentials.txt", key_to_decrypt)
+        exist = False
+
+        with open("credentials.txt", 'r+', errors='replace') as f:
+            content = f.read().replace('\n', '')
 
             if content:
 
+                print("credentials com dados")
+
                 print(content)
-                print(content[0])
                 
-                content = json.loads(content[0])
+                content = json.loads(content)
+                print(content)
 
                 new_cred = {"mail":email, "pass": password}
                 new_cred = json.dumps(new_cred)
 
                 if dns in content[0]:
+                    print("dns no json")
                     # para não adicionar contas repetidas
-                    exist = False
                     for cont in content[0][dns]:
                         if cont["mail"] == email and cont["pass"] == password:
                             exist = True
@@ -142,19 +149,25 @@ def authentication():
                     content[0][dns] = [new_cred]
 
             else:
+                print("credentials vazio")
                 new_cred = [ { dns: [{"mail":email, "pass": password}] } ]
                 content = json.dumps(new_cred)
 
             # reescrever o ficheiro com o conteúdo atualizado
-            print("NEW CONTENT:", str(content))
-            f.write( str(content) )
+            if not exist:
+                print("NEW CONTENT:", str(content))
+                f.write( str(content) )
 
         # encriptar o ficheiro
-        key_to_decrypt = enc.encrypt("credentials.json", "credentials.json", pass_to_encrypt)
+        key_to_decrypt = enc.encrypt("credentials.txt", "credentials.txt", pass_to_encrypt)
+        print("key to decrypt ", key_to_decrypt) 
+        
+        """
         print(">> DONE")
         
         reset_variables()
         redirect_site = True
+        return "redirecting to the website..."
         
     else:
         reset_variables()
@@ -165,7 +178,7 @@ def authentication():
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-    global first, valid, is_valid, response, challenge
+    global first, valid, is_valid, response, challenge, token
 
     print("protocol")
 
@@ -213,12 +226,6 @@ def challenge_response():
         payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        print("[UAP] Iteração: ")
-        print("challenge received: " + challenge_received)
-        print(payload)
-        print("response to my challenge ",response)
-        print("=============")
-
         res = requests.post('http://172.2.0.3:5001/protocol', json=data)
 
         requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
@@ -232,26 +239,17 @@ def challenge_response():
         data = json.loads(data)
         
         challenge_received = data['new_challenge']
-        # response_to_challenge_received = get_response(challenge_received, challenge)    # resposta ao challenge que recebemos
         response_to_challenge_received = get_response(challenge, challenge_received)      # resposta ao challenge que recebemos
 
         data_received = data['response']
         valid = verify_response(response, data_received)
         
-        # old_challenge = challenge
         
         create_challenge()
-        # response = get_response(challenge_received, old_challenge)
         response = get_response(challenge_received, challenge)
 
         payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
-
-        print("[UAP] Iteração número:")
-        print("challenge received: " + challenge_received)
-        print(payload)
-        print("response to new challenge ",response)
-        print("=============")
 
         res = requests.post('http://172.2.0.3:5001/protocol', json=data)
 
@@ -259,8 +257,8 @@ def challenge_response():
 
         if 'valid' in data:
             is_valid = data['valid']
-            print("is valid")
-            print(is_valid)
+            if 'token' in data:
+                token = data['token']
             return redirect(url_for('authentication'))
 
         requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
@@ -275,9 +273,10 @@ def challenge_response():
 def receive_dns():
     global dns
 
+    dns = request.args.get('referer')
     print("DNS recebido: ", dns)
     # redirect para o "/"
-    return redirect(url_for('login'))
+    return redirect(url_for('index'))
 
 
 def reset_variables():

@@ -16,7 +16,7 @@ def encrypt(infile, outfile, password, algorithm='AES', mode='ECB', iv=None):
     # to derive a key from a password using the PBKDF2 algorithm
     salt = bytes(secrets.token_hex(8), encoding="utf8") # random salt for each encryption
     iterations = 50000
-    print(password)
+
     key = binascii.hexlify(pbkdf2_hmac("sha256",  bytes(password, encoding="utf8"), salt, iterations, 32))
     digestkey = SHA256.new(key).digest()
         
@@ -75,6 +75,8 @@ def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
         decryptor = cipher.decryptor()
         
         total_bytes = os.path.getsize(infile) 
+        print("block size", block_size)
+        print("total bytes", total_bytes)
         read_bytes = 0
         
         while True:
@@ -82,13 +84,19 @@ def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
             read_bytes += len(cgram)
             if read_bytes == total_bytes:
                 # this is the last block
+                print("esta no padding")
                 text = decryptor.update(cgram)
+                print(text)
+                if not text:break
                 padding = text[-1]
                 text = text[0:block_size - padding]
                 fo.write(text)
                 break
+            else:
+                print("não esta no padding")
         
             text = decryptor.update(cgram)
+            print(text)
             fo.write(text)
         
         print("Data decrypted")
@@ -99,22 +107,22 @@ def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
     else:
         print("Não há dados")
     
+""" 
+if __name__ == "__main__":
 
-# if __name__ == "__main__":
-    
-#     # TODO : fazer que user faça input da key
-#     #! PROBLEM : a key tem de ser de 16, 32, 64, ... bytes, ou seja, n pode ser qqlr uma
-#     # TO RUN: python3 enc.py credentials.json password       ---- acho q ja consegui
+    # TODO : fazer que user faça input da key
+    #! PROBLEM : a key tem de ser de 16, 32, 64, ... bytes, ou seja, n pode ser qqlr uma
+    # TO RUN: python3 enc.py credentials.json password       ---- acho q ja consegui
 
-#     message = sys.argv[1]
-#     password = sys.argv[2].encode('utf-8').strip()
+    infile = 'credentials.json'
+    outfile = 'cred.json'
+    outfile2 = 'cred2.json'
+    password = 'admin'
 
-#     m = message.split(".")[0] + '.ecb'
-#     dm = m.split(".")[0] + '.json'
-    
-#     returned_key = encrypt(message, m, password, 'AES', 'ECB')
-#     print(returned_key)
-    
-#     decrypt(m, dm, returned_key, 'AES', 'ECB')
-    
+    # decrypt(infile, outfile, returned_key, 'AES', 'ECB')
+
+    returned_key = encrypt(infile, outfile, password, 'AES', 'ECB')
+
+    decrypt(outfile, outfile2, returned_key, 'AES', 'ECB')
+     """
 
