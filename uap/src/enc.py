@@ -16,7 +16,8 @@ def encrypt(infile, outfile, password, algorithm='AES', mode='ECB', iv=None):
     # to derive a key from a password using the PBKDF2 algorithm
     salt = bytes(secrets.token_hex(8), encoding="utf8") # random salt for each encryption
     iterations = 50000
-    key = binascii.hexlify(pbkdf2_hmac("sha256", password, salt, iterations, 32))
+    print(password)
+    key = binascii.hexlify(pbkdf2_hmac("sha256",  bytes(password, encoding="utf8"), salt, iterations, 32))
     digestkey = SHA256.new(key).digest()
         
     # supported algorithms
@@ -26,7 +27,8 @@ def encrypt(infile, outfile, password, algorithm='AES', mode='ECB', iv=None):
     cipher = Cipher(algorithms.AES(digestkey), cmode, backend=default_backend())
 
     fi = open(infile, 'rb')
-    fo = open(outfile, 'wb')
+    fo = open(outfile, 'wb')    
+
     
     encryptor = cipher.encryptor()
     
@@ -49,6 +51,7 @@ def encrypt(infile, outfile, password, algorithm='AES', mode='ECB', iv=None):
     
     print(key)
     return key
+    
 
 def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
     
@@ -56,41 +59,54 @@ def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
         print(f"Infile {infile} not found")
         return
 
-    digestkey = SHA256.new(key).digest()
-        
-    # supported algorithms
-    block_size = 256
-    block_size = algorithms.AES.block_size // 8
-    cmode = modes.ECB()
-    cipher = Cipher(algorithms.AES(digestkey), cmode, backend=default_backend())
-    
     fi = open(infile, 'rb')
-    fo = open(outfile, 'wb')
-    decryptor = cipher.decryptor()
-    
-    total_bytes = os.path.getsize(infile) 
-    read_bytes = 0
-    
-    while True:
-        cgram = fi.read(block_size)
-        read_bytes += len(cgram)
-        if read_bytes == total_bytes:
-            # this is the last block
+    if key:
+        print("Há dados")
+
+        digestkey = SHA256.new(key).digest()
+            
+        # supported algorithms
+        block_size = 256
+        block_size = algorithms.AES.block_size // 8
+        cmode = modes.ECB()
+        cipher = Cipher(algorithms.AES(digestkey), cmode, backend=default_backend())
+        
+        fo = open(outfile, 'wb')
+        decryptor = cipher.decryptor()
+        
+        total_bytes = os.path.getsize(infile) 
+        read_bytes = 0
+        
+        while True:
+            cgram = fi.read(block_size)
+            read_bytes += len(cgram)
+            if read_bytes == total_bytes:
+                # this is the last block
+                text = decryptor.update(cgram)
+                padding = text[-1]
+                text = text[0:block_size - padding]
+                fo.write(text)
+                break
+        
             text = decryptor.update(cgram)
-            padding = text[-1]
-            text = text[0:block_size - padding]
             fo.write(text)
-            break
+        
+        print("Data decrypted")
+        
+        fi.close()
+        fo.close()
     
-        text = decryptor.update(cgram)
-        fo.write(text)
-    
-    print("Data decrypted")
-    
-    fi.close()
-    fo.close()
+    else:
+        print("Não há dados")
     
 
+# if __name__ == "__main__":
+    
+#     # TODO : fazer que user faça input da key
+#     #! PROBLEM : a key tem de ser de 16, 32, 64, ... bytes, ou seja, n pode ser qqlr uma
+#     # TO RUN: python3 enc.py credentials.json password       ---- acho q ja consegui
+
+<<<<<<< HEAD
 # FUNCIONA ENCRIPTAR CREDENTIALS.JSON E DEPOIS DESENCRIPTAR CREDENTIALS.ECB
 if __name__ == "__main__":
     
@@ -109,4 +125,17 @@ if __name__ == "__main__":
     
     decrypt(m, dm, returned_key, 'AES', 'ECB')
     
+=======
+#     message = sys.argv[1]
+#     password = sys.argv[2].encode('utf-8').strip()
+
+#     m = message.split(".")[0] + '.ecb'
+#     dm = m.split(".")[0] + '.json'
+    
+#     returned_key = encrypt(message, m, password, 'AES', 'ECB')
+#     print(returned_key)
+    
+#     decrypt(m, dm, returned_key, 'AES', 'ECB')
+    
+>>>>>>> 89611502a33747f14dcc8a4836704a489ab921f9
 

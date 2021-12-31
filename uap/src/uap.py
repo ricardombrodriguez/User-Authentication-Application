@@ -26,6 +26,7 @@ email = None
 reset = False
 redirect_site = False
 pass_to_encrypt = None
+key_to_decrypt = None
 
 @app.route('/', methods=['POST', 'GET'])                                                                 
 def index(): 
@@ -48,35 +49,40 @@ def index():
 
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():                 
-    global password, email, dns, is_valid, reset, first, redirect_site
+    global password, email, dns, is_valid, reset, first, redirect_site, key_to_decrypt, pass_to_encrypt
 
     saved_mail = ""
     saved_pass = ""
 
     #receber o dns
     if request.method == 'GET':
-        """ with open("credentials.json") as credentials:
-            data = json.load(credentials)
+
+        if key_to_decrypt:
+            enc.decrypt("credentials.json", "credentials.json", key_to_decrypt)
             
-            if data:
-                data = data[0]
-                
-                # Buscar as credenciais
-                if dns in data:
-                    saved_mail = data[dns]["mail"]
-                    saved_pass = data[dns]["pass"]
-        """
+            print("seferovic")
+            # exit(0)
+
+            with open("credentials.json", 'r+') as f:
+                    content = f.readlines()
+
+                    if content:                
+                        content = json.loads(content[0])
+
+                        if dns in content[0]:
+                            saved_mail = content[0][dns][0]["mail"]
+                            saved_pass = content[0][dns][0]["pass"]
+
+            key_to_decrypt = enc.encrypt("credentials.json", "credentials.json", pass_to_encrypt)
+
         return render_template('login.html' , saved_mail=saved_mail, saved_pass=saved_pass, is_valid=is_valid)
     
     # login
     elif request.method == 'POST':
 
-        email =  hashlib.md5(request.form['email'].encode()).hexdigest()
-        password = hashlib.md5(request.form['pass'].encode()).hexdigest()
-        
-        # ALTERAR AQUI !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        email = request.form['email']
-        
+        email =  request.form['email']
+        password = request.form['pass']
+                
         # é enviado apenas o mail para a app
         data = {'email': email}
         data = json.dumps(data)
@@ -96,31 +102,56 @@ def login():
 
 @app.route('/authentication', methods=['POST', 'GET'])                                                                 
 def authentication():
-    global is_valid, email, password, dns, valid, first, challenge, response, reset, redirect_site, pass_to_encrypt
+    global is_valid, email, password, dns, valid, first, challenge, response, reset, redirect_site, pass_to_encrypt, key_to_decrypt
     
     # se a uap estiver válida para o server (is_valid) e se o server estiver válido para a uap (valid)
     if is_valid and valid:
 
         print("all valid")
 
+        # encriptar o ficheiro
+        # enc.encrypt(content,"credentials.json", pass_to_encrypt)
+
         # DECRYPT, GET CREDENTIALS AND ENCRYPT WITH PASSWORD
-        content, salt = enc.decrypt("credentials.json", pass_to_encrypt)
-        if content:
+        enc.decrypt("credentials.json", "credentials.json", key_to_decrypt)
+        
+        with open("credentials.json", 'r+') as f:
+            content = f.readline()
 
-            new_cred = {"mail":email, "pass": password}
-            new_cred = json.dumps(new_cred)
+            if content:
 
-            if dns in content[0]:
-                content[0][dns].append(new_cred)
+                print(content)
+                print(content[0])
+                
+                content = json.loads(content[0])
+
+                new_cred = {"mail":email, "pass": password}
+                new_cred = json.dumps(new_cred)
+
+                if dns in content[0]:
+                    # para não adicionar contas repetidas
+                    exist = False
+                    for cont in content[0][dns]:
+                        if cont["mail"] == email and cont["pass"] == password:
+                            exist = True
+                    
+                    if not exist:
+                        content[0][dns].append(new_cred)
+
+                else:
+                    content[0][dns] = [new_cred]
+
             else:
-                content[0][dns] = [new_cred]
+                new_cred = [ { dns: [{"mail":email, "pass": password}] } ]
+                content = json.dumps(new_cred)
 
-        else:
-            new_cred = [{dns:{"mail":email, "pass": password}}]
-            content = json.dumps(new_cred)
+            # reescrever o ficheiro com o conteúdo atualizado
+            print("NEW CONTENT:", str(content))
+            f.write( str(content) )
 
         # encriptar o ficheiro
-        enc.encrypt(content,"credentials.json",pass_to_encrypt,salt)
+        key_to_decrypt = enc.encrypt("credentials.json", "credentials.json", pass_to_encrypt)
+        print(">> DONE")
         
         reset_variables()
         redirect_site = True
@@ -276,7 +307,8 @@ def get_response(received_challenge, mychallenge):
     if not mychallenge:
         mychallenge = ""
 
-    response = sha256((received_challenge+password+mychallenge).encode('utf-8')).hexdigest()
+    encrypt_pass = hashlib.md5(password.encode()).hexdigest()
+    response = sha256((received_challenge+encrypt_pass+mychallenge).encode('utf-8')).hexdigest()
     return response
 
 def random_response():
