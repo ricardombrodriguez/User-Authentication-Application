@@ -106,26 +106,6 @@ def decrypt(infile, outfile, key, algorithm='AES', mode='ECB', iv=None):
 #     #! PROBLEM : a key tem de ser de 16, 32, 64, ... bytes, ou seja, n pode ser qqlr uma
 #     # TO RUN: python3 enc.py credentials.json password       ---- acho q ja consegui
 
-<<<<<<< HEAD
-# FUNCIONA ENCRIPTAR CREDENTIALS.JSON E DEPOIS DESENCRIPTAR CREDENTIALS.ECB
-if __name__ == "__main__":
-    
-    # TODO : fazer que user faça input da key
-    #! PROBLEM : a key tem de ser de 16, 32, 64, ... bytes, ou seja, n pode ser qqlr uma
-    # TO RUN: python3 enc.py credentials.json password       ---- acho q ja consegui
-
-    message = sys.argv[1]
-    password = sys.argv[2].encode('utf-8').strip()
-
-    m = message.split(".")[0] + '.json'
-    dm = m.split(".")[0] + '.json'
-    
-    returned_key = encrypt(message, m, password, 'AES', 'ECB')
-    print(returned_key)
-    
-    decrypt(m, dm, returned_key, 'AES', 'ECB')
-    
-=======
 #     message = sys.argv[1]
 #     password = sys.argv[2].encode('utf-8').strip()
 
@@ -137,5 +117,4 @@ if __name__ == "__main__":
     
 #     decrypt(m, dm, returned_key, 'AES', 'ECB')
     
->>>>>>> 89611502a33747f14dcc8a4836704a489ab921f9
 
