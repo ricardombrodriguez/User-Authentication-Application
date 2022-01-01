@@ -4,7 +4,8 @@ from flask import Flask
 from flask import jsonify
 from flask import request
 from flask import render_template     
-import secrets                                     
+import secrets             
+import tempfile                        
 from flask import redirect, url_for
 import enc
 
@@ -112,57 +113,54 @@ def authentication():
     if is_valid and valid:
 
         print("all valid")
-        """
 
-        # DECRYPT, GET CREDENTIALS AND ENCRYPT WITH PASSWORD
-        print("key to decrypt ", key_to_decrypt)
-         
-        enc.decrypt("credentials.txt", "credentials.txt", key_to_decrypt)
-        exist = False
+        tempfile, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
 
-        with open("credentials.txt", 'r+', errors='replace') as f:
-            content = f.read().replace('\n', '')
+        open("credentials.txt", "r+").close() # apagar dados do ficheiro
 
-            if content:
+        f = tempfile
 
-                print("credentials com dados")
+        content = None
+        print("tempfile")
+        if not empty:
+            print("ficheiro: ")
+            for line in f:
+                print(line)
 
-                print(content)
+            print("credentials com dados")
+            content = f.read().replace('\n','')
+            content = json.loads(content)
+            print(content)
+
+            new_cred = {"mail":email, "pass": password}
+            new_cred = json.dumps(new_cred)
+
+            if dns in content[0]:
+                print("dns no json")
+                # para não adicionar contas repetidas
+                for cont in content[0][dns]:
+                    if cont["mail"] == email and cont["pass"] == password:
+                        exist = True
                 
-                content = json.loads(content)
-                print(content)
-
-                new_cred = {"mail":email, "pass": password}
-                new_cred = json.dumps(new_cred)
-
-                if dns in content[0]:
-                    print("dns no json")
-                    # para não adicionar contas repetidas
-                    for cont in content[0][dns]:
-                        if cont["mail"] == email and cont["pass"] == password:
-                            exist = True
-                    
-                    if not exist:
-                        content[0][dns].append(new_cred)
-
-                else:
-                    content[0][dns] = [new_cred]
+                if not exist:
+                    content[0][dns].append(new_cred)
 
             else:
-                print("credentials vazio")
-                new_cred = [ { dns: [{"mail":email, "pass": password}] } ]
-                content = json.dumps(new_cred)
+                content[0][dns] = [new_cred]
 
-            # reescrever o ficheiro com o conteúdo atualizado
-            if not exist:
-                print("NEW CONTENT:", str(content))
-                f.write( str(content) )
+        else:
+            print("credentials vazio")
+            new_cred = [ { dns: [{"mail":email, "pass": password}] } ]
+            content = json.dumps(new_cred)
+
+        # reescrever o ficheiro com o conteúdo atualizado
+        print("NEW CONTENT:", str(content))
+        f.write( str(content) )
 
         # encriptar o ficheiro
-        key_to_decrypt = enc.encrypt("credentials.txt", "credentials.txt", pass_to_encrypt)
-        print("key to decrypt ", key_to_decrypt) 
+        enc.encrypt(f, "credentials.txt", pass_to_encrypt)
         
-        """
+        
         print(">> DONE")
         
         reset_variables()

@@ -102,6 +102,7 @@ include("connection.php");
 
         $json = file_get_contents('php://input');
         echo "here1 ". $json;
+        
         $data = json_decode($json, true);
         print_r($data);
         echo "here2 ".$data;
