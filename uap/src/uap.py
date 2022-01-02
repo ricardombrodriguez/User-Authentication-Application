@@ -74,7 +74,7 @@ def login():
                     saved_pass = cred["pass"]
                     credentials[saved_mail] = saved_pass
         
-        enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
+            enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
 
         return render_template('login.html', dic_mail=credentials, is_valid=is_valid)
     
