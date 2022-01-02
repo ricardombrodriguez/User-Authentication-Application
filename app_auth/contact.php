@@ -146,20 +146,6 @@
     </div>
     <!-- Contact Form End -->
 
-    <?php 
-        /* if (isset($_POST['bttn'])) {  */
-/*             $target = $_SERVER['DOCUMENT_ROOT'] . "/uploads/" . basename($_FILES['fileToUpload']['name']);     
-            
-            echo "here ".basename($_FILES['fileToUpload']['name']);
-            
-            if(move_uploaded_file($_FILES['fileToUpload']['tmp_name'], $target)){
-                echo "The picture has been successfully uploaded.";
-            } else {
-                echo "There was an error uploading the picture, please try again.";
-            } */
-        /* } */
-    ?>
-
     <!-- Js Plugins -->
     <script src="js/jquery-3.3.1.min.js"></script>
     <script src="js/bootstrap.min.js"></script>

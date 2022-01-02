@@ -27,12 +27,9 @@
           function onInput() {
 
             let data = JSON.parse('{{ dic_mail | tojson }}');
-            console.log(data);
-
             var email = document.getElementById("email").value;
             var emails = document.getElementById('saved_mail').childNodes;
             var password = document.getElementById("pass").value;
-            console.log(password);
             for (var i = 0; i < emails.length; i++) {
               if (emails[i].value === email) {
                 var email = emails[i].value;
@@ -56,5 +53,11 @@
       {% endif %}
     </form>
   </body>
+
+  <div class="footer"></div>
+    <footer>
+      <i>The authentication protocol being used is E-CHAP (Challenge-Handshake Authentication Protocol)</i>
+    </footer>
+  </div>
 
 </html>
