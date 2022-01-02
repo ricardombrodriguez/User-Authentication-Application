@@ -90,8 +90,58 @@ include("connection.php");
 
 
     <?php
-        $_SESSION['REFERER'] = $_SERVER['HTTP_REFERER']
+
+        echo "ENTROU";
+
+        echo var_dump($_POST);
+
+        $tokens = [];
+
+        $_SESSION['REFERER'] = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
+        $redirect_link = "http://localhost:5002/dns?referer=".$_SESSION['REFERER'];
+
+        $json = file_get_contents('php://input');
+        echo "here1 ". $json;
+        
+        $data = json_decode($json, true);
+        print_r($data);
+        echo "here2 ".$data;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            echo "post";
+        }
+
+        if (isset($data["token_server"])) {
+
+            echo "entrouuuuu";
+
+            $token = $data["token_server"];
+            $tokens[$token] = $data["mail"];
+            
+    
+        }
+
+        if (isset($_POST["token_uap"])) {
+
+            echo "lets goooo!";
+
+            $token = $_POST["token_uap"];
+            $email = "";
+            if (array_key_exists($token, $tokens)) {
+                echo "Existe esse token!";
+                $email = $_POST["mail"];
+
+            }
+            echo "email do user:".$email;
+        
+        }
+
     ?>
+
+    <script>
+        console.log(<?= json_encode($token); ?>);
+        console.log(<?= json_encode($email); ?>);
+    </script>
 
     <!-- Header Section Begin -->
     <header class="header">
@@ -113,7 +163,7 @@ include("connection.php");
                 <div class="col-lg-3">
                     <div class="header__cart">
                         <ul>
-                            <li><a href="http://localhost:5002/dns" style="color: green"><i class="fa fa-sign-in"></i> Login</a></li>
+                            <li><a href="<?php echo $redirect_link ?>" style="color: green"><i class="fa fa-sign-in"></i> Login</a></li>
                             <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
                             <li><a href="./shoping-cart.php" style="color: green"><i class="fa fa-shopping-cart"></i> Shopping Cart</a></li>
                         </ul>

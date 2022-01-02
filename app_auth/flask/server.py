@@ -8,7 +8,7 @@ from flask import request
 from flask import redirect, url_for
 import secrets, hashlib
 import mysql.connector
-import ssl
+import uuid
 
 app = Flask(__name__)  
 
@@ -29,17 +29,23 @@ valid = True        # o user que estamos a autenticar é valido ou não
 is_valid = True     # variavel controlo para autenticar se user valido ou não
 password = None
 controlo = False
+mail = None
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-    global response, challenge, ECHAP_CURRENT, ECHAP_MAX, valid, is_valid, password, controlo
+    global response, challenge, ECHAP_CURRENT, ECHAP_MAX, valid, is_valid, password, controlo, mail
     ECHAP_CURRENT += 1
 
     # final, diz se o user está autenticado ou não
     if ECHAP_CURRENT == ECHAP_MAX:
 
         print("[SERVER] VALID: " + str(valid))
-        data = {"valid":True} if valid else {"valid":False}
+        token = str(uuid.uuid4())
+        # enviar para o index.php?
+
+        requests.post('http://172.2.0.2', json=json.dumps({"token_server":token,"mail":mail}))
+
+        data = {"valid":True, "token": token} if valid else {"valid":False}
         print(data)        
         controlo = valid
         ECHAP_CURRENT = 0
@@ -52,7 +58,6 @@ def challenge_response():
         return json.dumps(data)
     
     if not valid:
-        print("RANDOM")
         data = request.get_json(force=True) 
         data = json.loads(data)
 
@@ -84,12 +89,6 @@ def challenge_response():
         
         payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
-
-        print("[SERVER] Iteração número " + str(ECHAP_CURRENT) + ":")
-        print("challenge received: " + challenge_received)
-        print(payload)
-        print("response to new challenge ",response)
-        print("=============")
         
         return data
 
@@ -124,18 +123,16 @@ def random_response():
 
 @app.route('/uap', methods=['POST', 'GET'])                                                                 
 def redirect_uap():    
-    global password, challenge, response, ECHAP_CURRENT
+    global password, challenge, response, ECHAP_CURRENT, mail
 
     if request.method == 'POST':   
         data = request.get_json(force=True) 
         input_json = json.loads(data)
         mail = input_json["email"]
-        print(mail)
         
         cursor = conn.cursor()
         cursor.execute(f"SELECT * FROM users WHERE email='{mail}'")
         data = cursor.fetchone()
-        print("data", data)
         cursor.close()
         
         password = data[3]     # atualiza a password
@@ -145,9 +142,5 @@ def redirect_uap():
         data = {"challenge": challenge}
         data = json.dumps(data)
         response = get_response(challenge, None)
-        print("[SERVER] Iteração número " + str(ECHAP_CURRENT) + ":")
-        print(data)
-        print("response to my challenge ",response)
-        print("=============")
 
         return data  
