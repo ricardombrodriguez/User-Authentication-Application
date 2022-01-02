@@ -91,35 +91,24 @@ include("connection.php");
 
     <?php
 
-        echo "ENTROU";
-
-        echo var_dump($_POST);
-
         $tokens = [];
 
         $_SESSION['REFERER'] = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
         $redirect_link = "http://localhost:5002/dns?referer=".$_SESSION['REFERER'];
 
-        $json = file_get_contents('php://input');
-        echo "here1 ". $json;
-        
-        $data = json_decode($json, true);
-        print_r($data);
-        echo "here2 ".$data;
+        if (isset($_POST["token_server"])) {
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            echo "post";
-        }
-
-        if (isset($data["token_server"])) {
-
-            echo "entrouuuuu";
-
-            $token = $data["token_server"];
-            $tokens[$token] = $data["mail"];
+            echo "Token server";
+            $token = $_POST["token_server"];
+            $tokens[$token] = $_POST["mail"];
             
     
+        } else {
+            print_r("AAAAAAAAAAAAAAAAAAAAAAAAA ");
+            print_r($_POST);
         }
+
+
 
         if (isset($_POST["token_uap"])) {
 
@@ -137,11 +126,6 @@ include("connection.php");
         }
 
     ?>
-
-    <script>
-        console.log(<?= json_encode($token); ?>);
-        console.log(<?= json_encode($email); ?>);
-    </script>
 
     <!-- Header Section Begin -->
     <header class="header">
@@ -163,7 +147,10 @@ include("connection.php");
                 <div class="col-lg-3">
                     <div class="header__cart">
                         <ul>
-                            <li><a href="<?php echo $redirect_link ?>" style="color: green"><i class="fa fa-sign-in"></i> Login</a></li>
+                            <form action='http://localhost:5002/dns' method='POST'>
+                                <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
+                                <li><button type="submit" style="color: green; border: none; background: none; padding: 0;"><i class="fa fa-sign-in"></i> Login</a></li>
+                            </form>
                             <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
                             <li><a href="./shoping-cart.php" style="color: green"><i class="fa fa-shopping-cart"></i> Shopping Cart</a></li>
                         </ul>
@@ -266,90 +253,6 @@ include("connection.php");
 
                             
                         <?php endforeach; ?>
-
-					    </tbody>
-					  </table>
-					</div>
-				</div>
-			</div>
-		</div>
-	</section>
-    <!-- Product table end  -->
-
-    <!-- Js Plugins -->
-    <script src="js/jquery-3.3.1.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/jquery.nice-select.min.js"></script>
-    <script src="js/jquery-ui.min.js"></script>
-    <script src="js/jquery.slicknav.js"></script>
-    <script src="js/mixitup.min.js"></script>
-    <script src="js/owl.carousel.min.js"></script>
-    <script src="js/main.js"></script>
-
-
-
-</body>
-</html>                 </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-    <!-- Hero Section End -->
-
-    <!-- Product table  -->
-    <section class="ftco-section">
-		<div class="container">
-			<div class="row">
-				<div class="col-md-12">
-					<div class="table-wrap">
-						<table class="table">
-					    <thead class="thead-primary">
-					      <tr>
-					        <th>Trip</th>
-					        <th>Location</th>
-					        <th>Price</th>
-                            <th>Score</th>
-					        <th>Details</th>
-					      </tr>
-					    </thead>
-					    <tbody>
-                        <?php
-
-                        if (isset($_GET["searchitem"])) {
-                            
-                            $search = mysqli_real_escape_string($conn, $_GET["searchitem"]);
-                            $q = "SELECT * from trips where lugar like '%".$search."%'";
-                            $result = mysqli_query($conn,$q);
-
-                            if (!$result){
-                                echo("</table></div>".mysqli_error($conn));
-
-                            }
-                        }
-
-                        foreach($result as $row): ?>
-                            <tr>
-                                <form method="POST" name="trip" action="shop-details.php">
-                                    <td class="border-bottom-0" value="<?= $row['nome'] ?>"><?php echo $row['nome']; ?></td>
-                                    <td class="border-bottom-0" value="<?= $row['lugar'] ?>"><?php echo $row['lugar']; ?></td>
-                                    <td class="border-bottom-0" value="<?= $row['preco'] ?>"><?php echo $row['preco']; ?></td>
-                                    <td class="border-bottom-0"><?php echo $row['avaliacao']; ?></td>
-                                    <td class="border-bottom-0">
-                                        <input type="hidden" name="nome" value="<?= $row['nome'] ?>" />
-                                        <input type="hidden" name="preco" value="<?= $row['preco'] ?>" />
-                                        <input type="hidden" name="lugar" value="<?= $row['lugar'] ?>" />
-                                        <input type="hidden" name="avaliacao" value="<?= $row['avaliacao'] ?>" />
-                                        <input type="hidden" name="descricao" value="<?= $row['descricao'] ?>" />
-                                        <input type="hidden" name="trip_id" value="<?= $row['id'] ?>" />
-                                        <button type="submit" class="btn btn-primary" style="text-align: center;" name="see_more">Details</button>
-                                    </td>
-                                </form>
-					        </tr>
-
-                            
-                        <?php endforeach; ?>
-
 					    </tbody>
 					  </table>
 					</div>

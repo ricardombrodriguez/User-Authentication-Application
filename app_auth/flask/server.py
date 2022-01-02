@@ -1,63 +1,50 @@
 import json
-from logging import disable
-import flask
+import os
 from flask.app import Flask
 import requests               
 from hashlib import sha256
-from flask import request   
-from flask import redirect, url_for
-import secrets, hashlib
+from flask import request, session
+import secrets
 import mysql.connector
 import uuid
 
-app = Flask(__name__)  
+app = Flask(__name__)
+app.config['SECRET_KEY'] = os.urandom(32)
 
-conn = mysql.connector.connect(user='admin', 
-                               password='admin',
-                               host='mysql',
-                               port=3306,
-                               database='spoton',
-                               use_pure=True
-                              )   
 
-dns = None
-ECHAP_CURRENT = 0
-ECHAP_MAX = 10
-challenge = None    # challenge criado pelo server
-response = None     # resposta do user para o challenge criado pelo server    
-valid = True        # o user que estamos a autenticar é valido ou não
-is_valid = True     # variavel controlo para autenticar se user valido ou não
-password = None
-controlo = False
-mail = None
+
+conn = mysql.connector.connect( user='admin', password='admin', host='mysql', port=3306, database='spoton', use_pure=True )   
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-    global response, challenge, ECHAP_CURRENT, ECHAP_MAX, valid, is_valid, password, controlo, mail
-    ECHAP_CURRENT += 1
+
+    print("/protocol")
+    
+    session['ECHAP_CURRENT'] += 1
+    ECHAP_MAX = 10
 
     # final, diz se o user está autenticado ou não
-    if ECHAP_CURRENT == ECHAP_MAX:
+    if session['ECHAP_CURRENT'] == ECHAP_MAX:
 
-        print("[SERVER] VALID: " + str(valid))
+        print("[SERVER] VALID: " + str(session['valid']))
         token = str(uuid.uuid4())
-        # enviar para o index.php?
 
-        requests.post('http://172.2.0.2', json=json.dumps({"token_server":token,"mail":mail}))
+        dic={'token_server':token,'mail': session['mail']}
+        print(dic)
+        res = requests.post(url="http://172.2.0.2/", data=dic)
 
-        data = {"valid":True, "token": token} if valid else {"valid":False}
+        data = {"valid":True, "token": token} if session['valid'] else {"valid":False}
         print(data)        
-        controlo = valid
-        ECHAP_CURRENT = 0
-        challenge = None    
-        response = None       
-        valid = True        
-        is_valid = True    
-        password = None
+        session['ECHAP_CURRENT']  = 0
+        session['challenge'] = None    
+        session['response'] = None       
+        session['valid'] = True        
+        session['is_valid'] = True    
+        session['password'] = None
 
         return json.dumps(data)
     
-    if not valid:
+    if not session['valid']:
         data = request.get_json(force=True) 
         data = json.loads(data)
 
@@ -65,7 +52,7 @@ def challenge_response():
         
         create_challenge()
         
-        payload = {'response': random_response_to_challenge_received, 'new_challenge': challenge }
+        payload = {'response': random_response_to_challenge_received[:3], 'new_challenge': session['challenge'] }
         data = json.dumps(payload)
         
         return data
@@ -76,71 +63,73 @@ def challenge_response():
         data = json.loads(data)
 
         challenge_received = data['new_challenge']
-        response_to_challenge_received = get_response(challenge,challenge_received)    # resposta ao challenge que recebemos
+        response_to_challenge_received = get_response(session['challenge'],challenge_received)    # resposta ao challenge que recebemos
 
         data_received = data['response']
-        valid = verify_response(response, data_received)
-        
-        # old_challenge = challenge
+        session['valid'] = verify_response(session['response'], data_received)
         
         create_challenge()
-        # response = get_response(challenge_received, old_challenge)
-        response = get_response(challenge_received, challenge)
+
+        session['response'] = get_response(challenge_received, session['challenge'])
         
-        payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
+        payload = {'response': response_to_challenge_received[:3], 'new_challenge': session['challenge']  }
         data = json.dumps(payload)
         
         return data
 
 
+@app.route('/uap', methods=['POST', 'GET'])                                                                 
+def redirect_uap():    
+
+    print("/uap")
+
+    session['ECHAP_CURRENT'] = 0
+    session['challenge'] = None
+    session['response'] = None
+    session['is_valid'] =  True
+    session['password'] = None
+    session['valid'] = True
+    session['mail'] = None
+    session['dns'] = None
+
+    if request.method == 'POST':   
+
+        data = request.get_json(force=True) 
+        input_json = json.loads(data)
+        session['mail'] = input_json["email"]
+        
+        cursor = conn.cursor()
+        cursor.execute(f"SELECT * FROM users WHERE email='{session['mail']}'")
+        data = cursor.fetchone()
+        cursor.close()
+        
+        password = data[3]     # atualiza a password
+        session['password'] = password
+
+        session['ECHAP_CURRENT'] += 1
+        create_challenge()
+        data = {"challenge": session['challenge'] }
+        data = json.dumps(data)
+        session['response'] = get_response(session['challenge'] , None)
+
+        return data  
+
+
 def verify_response(response, data_received):
 
-    if data_received == response:
+    if response.startswith(data_received):
+        print("resposta igual")
         return True
     else:
         return False
 
 
 def create_challenge():
-
-    global challenge
-    challenge = str(secrets.randbelow(1000000))
+    session['challenge']  = str(secrets.randbelow(1000000))
 
 def get_response(received_challenge, mychallenge):
-
-    global password
-
-    if not mychallenge:
-        mychallenge = ""
-
-    response = sha256((received_challenge+password+mychallenge).encode('utf-8')).hexdigest()
-    return response
+    if not mychallenge: mychallenge = ""
+    return sha256((received_challenge+ session['password']+mychallenge).encode('utf-8')).hexdigest()
 
 def random_response():
-
-    response = sha256((str(secrets.randbelow(1000000))).encode('utf-8')).hexdigest()
-    return response
-
-@app.route('/uap', methods=['POST', 'GET'])                                                                 
-def redirect_uap():    
-    global password, challenge, response, ECHAP_CURRENT, mail
-
-    if request.method == 'POST':   
-        data = request.get_json(force=True) 
-        input_json = json.loads(data)
-        mail = input_json["email"]
-        
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT * FROM users WHERE email='{mail}'")
-        data = cursor.fetchone()
-        cursor.close()
-        
-        password = data[3]     # atualiza a password
-
-        ECHAP_CURRENT += 1
-        create_challenge()
-        data = {"challenge": challenge}
-        data = json.dumps(data)
-        response = get_response(challenge, None)
-
-        return data  
+    return sha256((str(secrets.randbelow(1000000))).encode('utf-8')).hexdigest()

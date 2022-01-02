@@ -3,8 +3,6 @@ version: '3.8'
 volumes:
   datafiles:
 
-# docker run --name spoton -e MYSQL_ROOT_PASSWORD=admin -e MYSQL_DATABASE=spoton -e MYSQL_USER=admin -e MYSQL_PASSWORD=admin -p 33060:3306 -d mysql/mysql-server:5.7
-
 services:
 
   website:
@@ -14,8 +12,8 @@ services:
         - "5000:80"
     volumes:
         - ./app_auth/:/var/www/html/
-    links:
-        - mysql
+    depends_on:
+      - mysql
     networks:
       network:
         ipv4_address: 172.2.0.2
@@ -31,8 +29,8 @@ services:
       - FLASK_APP=server
       - FLASK_ENV=development
       - PYTHONUNBUFFERED=1
-    links:
-      - mysql
+    depends_on:
+      - website
     networks:
       network:
         ipv4_address: 172.2.0.3
