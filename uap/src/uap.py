@@ -30,6 +30,8 @@ pass_to_encrypt = None
 key_to_decrypt = None
 token = None
 
+session = requests.Session()
+
 @app.route('/', methods=['POST', 'GET'])                                                                 
 def index(): 
     global pass_to_encrypt
@@ -88,9 +90,9 @@ def login():
         data = {'email': hashlib.md5(email.encode()).hexdigest() }
         data = json.dumps(data)
 
-        res = requests.post('http://172.2.0.3:5001/uap', json=data)
+        res = session.post('http://172.2.0.3:5001/uap', json=data)
 
-        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
+        session.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         if redirect_site:
 
@@ -98,7 +100,7 @@ def login():
 
             data = {'token_uap':token}
 
-            res = requests.post(url="http://172.2.0.2/", data={'token_uap':token})
+            res = session.post(url="http://172.2.0.2/", data={'token_uap':token})
 
             return redirect("http://172.2.0.2")
 
@@ -174,7 +176,7 @@ def challenge_response():
         payload = {'response': random_response_to_challenge_received[:3], 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        res = requests.post('http://172.2.0.3:5001/protocol', json=data)
+        res = session.post('http://172.2.0.3:5001/protocol', json=data)
 
         data = json.loads(res.text)
 
@@ -182,7 +184,7 @@ def challenge_response():
             is_valid = data['valid']
             return redirect(url_for('authentication'))
 
-        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
+        session.post('http://localhost:5002/protocol', json=json.dumps(res.text))
         
         return "ok"
 
@@ -204,9 +206,9 @@ def challenge_response():
         payload = {'response':  response_to_challenge_received[:3], 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        res = requests.post('http://172.2.0.3:5001/protocol', json=data)
+        res = session.post('http://172.2.0.3:5001/protocol', json=data)
 
-        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
+        session.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         return "ok"
         
@@ -227,7 +229,7 @@ def challenge_response():
         payload = {'response': response_to_challenge_received[:3], 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        res = requests.post('http://172.2.0.3:5001/protocol', json=data)
+        res = session.post('http://172.2.0.3:5001/protocol', json=data)
 
         data = json.loads(res.text)
 
@@ -237,7 +239,7 @@ def challenge_response():
                 token = data['token']
             return redirect(url_for('authentication'))
 
-        requests.post('http://localhost:5002/protocol', json=json.dumps(res.text))
+        session.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
