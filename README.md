@@ -1,24 +1,39 @@
-# Projeto 2 de SIO 2021/2022 - **Authentication**
+# 2nd  Project SIO 2021/2022 - **Authentication**
 
-## Descrição do projeto
 
-This assignment will focus on the implementation of robust authentication protocols. The objective is for students to develop a new protocol and a related Web application to explore it.
 
-## run UAP
+## Description
 
-dentro de src
+For this assignment we decided to focus on the website we worked on for the first project and improve the security components implementing a new authentication protocol and exploring it. For this we created a new component that is responsible for authenticating the user login information and redirecting the user to the web-server if all is right, where as in the last project this was all done by the web-server component.
 
-```
-docker rmi -f $(docker images -aq)
 
-docker build -t html-server-image:v1 .
 
-docker run -d -p 8000:80 html-server-image:v1
+#### **How to execute:**
 
-curl localhost:8000
-```
+- Inside ***uap/src*** run 
 
-## **Autores**
+    ```bash
+    pip3 install -r requirements.txt
+    python3 uap.py
+    ```
+
+​		This will run the authentication server.
+
+
+
+- Inside ***app_auth/flask***
+
+    ```bash
+    pip3 install -r requirements.txt
+    python3 server.py
+    ```
+
+​		This will run the website.
+
+
+
+
+## **Authors**
 
 | NMEC  | Name              |                   email  |
 | ----- | ----------------- | -----------------------: |
