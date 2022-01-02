@@ -51,30 +51,30 @@ def index():
 
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():                 
-    global password, email, dns, is_valid, reset, first, redirect_site, key_to_decrypt, pass_to_encrypt, token
-
-    saved_mail = ""
-    saved_pass = ""
+    global password, email, dns, is_valid, reset, first, redirect_site, pass_to_encrypt, token
 
     #receber o dns
     if request.method == 'GET':
 
-        """ if key_to_decrypt:
-            enc.decrypt("credentials.json", "credentials.json", key_to_decrypt)
+        print("/login")
 
-            with open("credentials.json", 'r+') as f:
-                    content = f.readlines()
+        content, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
 
-                    if content:                
-                        content = json.loads(content[0])
+        credentials = {}
+        if not empty:
+            
+            content = content.decode("utf-8").replace("\'", "\"")
+            content = json.loads(content)
 
-                        if dns in content[0]:
-                            saved_mail = content[0][dns][0]["mail"]
-                            saved_pass = content[0][dns][0]["pass"]
+            if dns in content[0]:
+                for cred in content[0][dns]:
+                    saved_mail = cred["mail"]
+                    saved_pass = cred["pass"]
+                    credentials[saved_mail] = saved_pass
+        
+        enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
 
-            key_to_decrypt = enc.encrypt("credentials.json", "credentials.json", pass_to_encrypt) """
-
-        return render_template('login.html' , saved_mail=saved_mail, saved_pass=saved_pass, is_valid=is_valid)
+        return render_template('login.html', dic_mail=credentials, is_valid=is_valid)
     
     # login
     elif request.method == 'POST':
@@ -114,30 +114,19 @@ def authentication():
 
         print("all valid")
 
-        tempfile, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
+        content, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
 
         open("credentials.txt", "r+").close() # apagar dados do ficheiro
 
-        f = tempfile
-
-        content = None
-        print("tempfile")
         if not empty:
-            print("ficheiro: ")
-            for line in f:
-                print(line)
 
-            print("credentials com dados")
-            content = f.read().replace('\n','')
+            content = content.decode("utf-8").replace("\'", "\"")
             content = json.loads(content)
-            print(content)
 
             new_cred = {"mail":email, "pass": password}
-            new_cred = json.dumps(new_cred)
 
             if dns in content[0]:
-                print("dns no json")
-                # para não adicionar contas repetidas
+
                 for cont in content[0][dns]:
                     if cont["mail"] == email and cont["pass"] == password:
                         exist = True
@@ -149,17 +138,10 @@ def authentication():
                 content[0][dns] = [new_cred]
 
         else:
-            print("credentials vazio")
-            new_cred = [ { dns: [{"mail":email, "pass": password}] } ]
-            content = json.dumps(new_cred)
-
-        # reescrever o ficheiro com o conteúdo atualizado
-        print("NEW CONTENT:", str(content))
-        f.write( str(content) )
+            content = [ { dns: [{"mail":email, "pass": password}] } ]
 
         # encriptar o ficheiro
-        enc.encrypt(f, "credentials.txt", pass_to_encrypt)
-        
+        enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
         
         print(">> DONE")
         
@@ -231,7 +213,6 @@ def challenge_response():
         return "ok"
         
     else:
-        print("else")
         data = request.get_json(force=True) 
         data = json.loads(data)
         data = json.loads(data)
@@ -313,5 +294,5 @@ def random_response():
     return response
 
 if __name__ == '__main__':                                                      
-    app.run(host='127.0.0.1',port=5002)
+    app.run(host='127.0.0.1',port=5002,debug=True)
     print("[UAP] Running on 127.0.0.1:5002")

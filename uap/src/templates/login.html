@@ -15,11 +15,39 @@
       <div class="formcontainer">
         <div class="container">
           <label for="username"><strong>Email</strong></label>
-          <input type="text" id="email" name="email"  placeholder="Email" value="{{ saved_mail }}">
+          <input type="text" id="email" name="email" list="saved_mail" placeholder="Email" oninput='onInput()'>
+          <datalist id="saved_mail">
+            {% for key, value in dic_mail.items() %}
+              <option value={{key}}>
+            {% endfor %}
+          </datalist>
         </div>
+
+        <script>          
+          function onInput() {
+
+            let data = JSON.parse('{{ dic_mail | tojson }}');
+            console.log(data);
+
+            var email = document.getElementById("email").value;
+            var emails = document.getElementById('saved_mail').childNodes;
+            var password = document.getElementById("pass").value;
+            console.log(password);
+            for (var i = 0; i < emails.length; i++) {
+              if (emails[i].value === email) {
+                var email = emails[i].value;
+                var pass = data[email];
+                var password = document.getElementById("pass").setAttribute("value", pass);
+                break;
+              }
+            }
+          }
+          
+        </script>
+
         <div class="container">
           <label for="password"><strong>Password</strong></label>
-          <input type="password" id="pass" name="pass" placeholder="Password" value="{{ saved_pass }}">
+          <input type="password" id="pass" name="pass" placeholder="Password" value="{{ pass }}">
         </div>
         <button type="submit" name="bttn" value="Submit">Login</button>
       </div>
@@ -28,4 +56,5 @@
       {% endif %}
     </form>
   </body>
+
 </html>
