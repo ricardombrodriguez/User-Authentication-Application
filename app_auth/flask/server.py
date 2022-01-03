@@ -129,6 +129,7 @@ def redirect_uap():
         
         return ""
 
+
 # verifica se os primeiros 2 bits da resposta coincidem com os 2 primeiros bits da solução correta
 def verify_response(response, data_received):
     response = ("".join(f"{ord(i):08b}" for i in response))[:2]

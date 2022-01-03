@@ -32,9 +32,7 @@ include("connection.php");
 <body>
 
     <?php
-
-    $_SESSION['REFERER'] = "http://172.2.0.2";
-
+    
     $result = $conn->query("SELECT * FROM trips") or die($conn->error);
     $token = $_GET['token'];
 
@@ -157,7 +155,8 @@ include("connection.php");
 
                             <li>
                             <form action='http://localhost:5002/dns' method='POST'>
-                                <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
+                                <input type="hidden" id="dns" name="dns" value="<?php echo "http://$_SERVER[HTTP_HOST]" ?>">
+                                <input type="hidden" id="api_dns" name="api_dns" value="<?php echo "http://172.2.0.3:5001" ?>">
                                 <i class="fa fa-sign-in"> </i><button type="submit" style="color: green; border: none; background: none; padding: 0;"> Login</a>
                             </form>
                             </li>

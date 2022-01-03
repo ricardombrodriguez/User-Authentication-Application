@@ -16,6 +16,7 @@ app = Flask(__name__)
 
 # variáveis de controlo (importantes)
 dns = None          # guarda o url da aplicação que pediu uma autenticação
+api_dns = None      # guarda o url do servidor/api da aplicação
 challenge = None    # challenge criado pelo server
 response = None     # resposta para o challenge criado pelo server
 valid = True        # se o user que estamos a autenticar é valido ou não
@@ -53,7 +54,7 @@ def index():
 
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():                 
-    global password, email, dns, is_valid, redirect_site, pass_to_encrypt, token, invalid_cred
+    global password, email, dns, is_valid, redirect_site, pass_to_encrypt, token, invalid_cred, api_dns
 
     if request.method == 'GET':
 
@@ -97,7 +98,7 @@ def login():
         data = json.dumps(data)
 
         # o email vai ser enviado para o endpoint /uap do server, para este verificar as credenciais para esse email e prosseguir
-        res = session.post('http://172.2.0.3:5001/uap', json=data)
+        res = session.post(api_dns+'/uap', json=data)
 
         # caso a resposta do POST for "", siginifica que as credenciais colocadas não existem
         if res.text == "":
@@ -111,7 +112,7 @@ def login():
         if redirect_site:
             
             # redirectionar o user para o DNS com um parâmetro de token no url
-            return redirect("http://172.2.0.2?token=%s" % token)
+            return redirect(dns+"?token=%s" % token)
 
         # caso este não tenha sido validado, voltar para o /login
         return redirect(url_for('login'))
@@ -119,7 +120,7 @@ def login():
 
 @app.route('/authentication', methods=['POST', 'GET'])                                                                 
 def authentication():
-    global is_valid, email, password, dns, valid, challenge, response, redirect_site, pass_to_encrypt
+    global is_valid, email, password, dns, valid, challenge, response, redirect_site, pass_to_encrypt, api_dns
     
     # se a uap estiver válida para o server (is_valid) e se o server estiver válido para a uap (valid)
     
@@ -179,7 +180,7 @@ def authentication():
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-    global valid, is_valid, response, challenge, token
+    global valid, is_valid, response, challenge, token, api_dns
 
     # a uap vai deixar de ter o echap current e chega a uma altura em que vai receber a resposta do server a dizer se é valid ou não
 
@@ -198,7 +199,7 @@ def challenge_response():
         data = json.dumps(payload)
 
         # os dados vão ser enviados para o endpoint /protocol do server com os dados
-        res = session.post('http://172.2.0.3:5001/protocol', json=data)
+        res = session.post(api_dns+'/protocol', json=data)
 
         data = json.loads(res.text)
 
@@ -237,7 +238,7 @@ def challenge_response():
         payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
-        res = session.post('http://172.2.0.3:5001/protocol', json=data)
+        res = session.post(api_dns+'/protocol', json=data)
 
         data = json.loads(res.text)
 
@@ -254,12 +255,13 @@ def challenge_response():
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
 
-# manda os dados com o redirect do /uap
+# dns -> website | api_dns -> url do backend/api do website (pode ser o mesmo ou não)
 @app.route('/dns', methods=['POST'])                                                                 
 def receive_dns():
-    global dns
+    global dns, api_dns
 
     dns = request.form.get('dns')
+    api_dns = request.form.get('api_dns')
     # redirect para o "/"
     return redirect(url_for('index'))
 
