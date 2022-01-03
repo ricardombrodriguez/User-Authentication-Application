@@ -126,18 +126,15 @@ def redirect_uap():
             session['response'] = get_response(session['challenge'] , None)
 
             return data  
-        else:
-            return ""
+        
+        return ""
 
 # verifica se os primeiros 2 bits da resposta coincidem com os 2 primeiros bits da solução correta
 def verify_response(response, data_received):
-
     response = ("".join(f"{ord(i):08b}" for i in response))[:2]
 
-    if response == data_received:
-        return True
-    else:
-        return False
+    if response == data_received: return True
+    return False
 
 # cria um novo challenge
 def create_challenge():

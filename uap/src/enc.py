@@ -37,20 +37,22 @@ def decrypt(infile, password):
         print("File is empty")
         return None, True
 
-    fi = open(infile, 'rb')               
-    salt = fi.read(16)                    
-    content = fi.read()              
+    fi = open(infile, 'rb')  # read file in binary             
+    salt = fi.read(16)       # read the salt (which is not encrypted)                
+    content = fi.read()      # read the rest of the data      
     key = binascii.hexlify(pbkdf2_hmac("sha256",  bytes(password, encoding="utf-8"), salt, 50000, 32))
     digestkey = SHA256.new(key).digest()
     
     cipher = Cipher(algorithms.AES(digestkey), modes.CBC(salt), backend=default_backend())
     decryptor = cipher.decryptor()                                        # prepare to decrypt
-    decrypted_data = decryptor.update(content) + decryptor.finalize()
+    decrypted_data = decryptor.update(content) + decryptor.finalize()     # decrypt data
 
-    verification = decrypted_data[:7]
+    verification = decrypted_data[:7]                                     # get the 7 first bytes to verify if they are equal or not to 'success'
     if verification.decode('latin-1') != 'success':
+        # the decryption password used is not correct as there's no 'success' message in the file
         return False,False
 
+    # unpad data and remove 'success' from the data
     unpadder = padding.PKCS7(128).unpadder()
     data = unpadder.update(decrypted_data) + unpadder.finalize()
     data = data[7:]

@@ -18,7 +18,6 @@ app = Flask(__name__)
 dns = None          # guarda o url da aplicação que pediu uma autenticação
 challenge = None    # challenge criado pelo server
 response = None     # resposta para o challenge criado pelo server
-first = True        # se é a primeira iteração do ECHAP ou não
 valid = True        # se o user que estamos a autenticar é valido ou não
 is_valid = None     # variavel controlo para autenticar se user valido ou não
 password = None     # guarda password introduzida pelo user
@@ -54,7 +53,7 @@ def index():
 
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():                 
-    global password, email, dns, is_valid, first, redirect_site, pass_to_encrypt, token, invalid_cred
+    global password, email, dns, is_valid, redirect_site, pass_to_encrypt, token, invalid_cred
 
     if request.method == 'GET':
 
@@ -119,7 +118,7 @@ def login():
 
 @app.route('/authentication', methods=['POST', 'GET'])                                                                 
 def authentication():
-    global is_valid, email, password, dns, valid, first, challenge, response, redirect_site, pass_to_encrypt
+    global is_valid, email, password, dns, valid, challenge, response, redirect_site, pass_to_encrypt
     
     # se a uap estiver válida para o server (is_valid) e se o server estiver válido para a uap (valid)
     
@@ -167,6 +166,7 @@ def authentication():
         redirect_site = True
         return "redirecting to the website..."
         
+    # estou inválido para o server mas o server está válido para mim
     else:
         # não está válido o user, dar redirect para a página de login outra vez
         reset_variables()
@@ -178,7 +178,7 @@ def authentication():
 
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-    global first, valid, is_valid, response, challenge, token
+    global valid, is_valid, response, challenge, token
 
     # a uap vai deixar de ter o echap current e chega a uma altura em que vai receber a resposta do server a dizer se é valid ou não
 
@@ -211,24 +211,24 @@ def challenge_response():
         return "ok"
 
     else:
-
         data = request.get_json(force=True)
         data = json.loads(json.loads(data))
 
-        # caso for a primeira mensagem recebida do server.py
+
         if "challenge" in data.keys():
             challenge_received = data['challenge']
-            response_to_challenge_received = get_response(challenge_received, None) # resposta ao challenge que recebemos
-        
-        # para todas as outras iterações com o server.py
+            response_to_challenge_received = get_response(challenge_received, None)
+            
         elif "new_challenge" in data.keys():
             challenge_received = data['new_challenge']
             response_to_challenge_received = get_response(challenge, challenge_received)      # resposta ao challenge que recebemos
-            
+
             data_received = data['response']
-            valid = verify_response(response, data_received)
+            valid = verify_response(response, data_received)    # vê se a resposta calculada e recebida são iguais, verificando se o server é válido ou não
+        
 
         response_to_challenge_received = ("".join(f"{ord(i):08b}" for i in response_to_challenge_received))[:2]
+        # transformar string da resposta em bits e guardar os dois primeiros
         
         create_challenge()
         response = get_response(challenge_received, challenge)
@@ -240,8 +240,10 @@ def challenge_response():
 
         data = json.loads(res.text)
 
+        # ao receber um 'valid' no data, quer dizer que obtemos os resultados sobre a nossa validação para o server 
         if 'valid' in data:
             is_valid = data['valid']
+            # receber o token produzido pelo server
             if 'token' in data:
                 token = data['token']
             return redirect(url_for('authentication'))
@@ -250,7 +252,6 @@ def challenge_response():
 
         return "ok"
         # data deve ser um dicionário do tipo challenge: 1 | response: 9 | is_first: true/false ...
-
 
 # manda os dados com o redirect do /uap
 @app.route('/dns', methods=['POST'])                                                                 
@@ -262,47 +263,40 @@ def receive_dns():
     return redirect(url_for('index'))
 
 
-
+# as variaveis globais voltam aos seus valores iniciais
 def reset_variables():
-    global challenge, response, first, valid, is_valid, password, email
-    response = None
-    first = True        
+    global challenge, response, valid, is_valid, password, email
+    response = None      
     valid = True        
     password = None
     email = None
 
-
+# verifica se os primeiros 2 bits da resposta coincidem com os 2 primeiros bits da solução correta
 def verify_response(response, data_received):
-
     response = ("".join(f"{ord(i):08b}" for i in response))[:2]
 
-    if response == data_received:
-        return True
-    else:
-        return False
+    if response == data_received: return True
+    return False
 
-
+# cria um novo challenge
 def create_challenge():
-
     global challenge
     challenge = str(secrets.randbelow(1000000))
 
 
+# calcula a resposta de um challenge
 def get_response(received_challenge, mychallenge):
     # misturar challenge com password
     global password
 
-    if not mychallenge:
-        mychallenge = ""
+    if not mychallenge: mychallenge = ""
 
     encrypt_pass = hashlib.md5(password.encode()).hexdigest()
-    response = sha256((received_challenge+encrypt_pass+mychallenge).encode('utf-8')).hexdigest()
-    return response
+    return sha256((received_challenge+encrypt_pass+mychallenge).encode('utf-8')).hexdigest()
 
-
+# criar uma reposta random
 def random_response():
-    response = sha256((str(secrets.randbelow(1000000))).encode('utf-8')).hexdigest()
-    return response
+    return sha256((str(secrets.randbelow(1000000))).encode('utf-8')).hexdigest()
 
 
 if __name__ == '__main__':                                                      
