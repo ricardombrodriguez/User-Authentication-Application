@@ -15,7 +15,7 @@
       <div class="formcontainer">
         <div class="container">
           <label for="username"><strong>Email</strong></label>
-          <input type="text" id="email" name="email" list="saved_mail" placeholder="Email" oninput='onInput()'>
+          <input type="text" id="email" name="email" list="saved_mail" placeholder="Email" oninput='onInput()' required>
           <datalist id="saved_mail">
             {% for key, value in dic_mail.items() %}
               <option value={{key}}>
@@ -44,7 +44,7 @@
 
         <div class="container">
           <label for="password"><strong>Password</strong></label>
-          <input type="password" id="pass" name="pass" placeholder="Password" value="{{ pass }}">
+          <input type="password" id="pass" name="pass" placeholder="Password" value="{{ pass }}" required>
         </div>
         <button type="submit" name="bttn" value="Submit">Login</button>
       </div>
@@ -59,13 +59,6 @@
         <p>The authentication protocol being used is E-CHAP (Challenge-Handshake Authentication Protocol)</p>
       </footer>
     </div>
-
   </body>
-
-  <div class="footer"></div>
-    <footer>
-      <i>The authentication protocol being used is E-CHAP (Challenge-Handshake Authentication Protocol)</i>
-    </footer>
-  </div>
 
 </html>

@@ -8,10 +8,10 @@ import secrets
 import mysql.connector
 import uuid
 
+from datetime import datetime, timedelta
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.urandom(32)
-
-
 
 conn = mysql.connector.connect( user='admin', password='admin', host='mysql', port=3306, database='spoton', use_pure=True )   
 
@@ -27,11 +27,16 @@ def challenge_response():
     if session['ECHAP_CURRENT'] == ECHAP_MAX:
 
         print("[SERVER] VALID: " + str(session['valid']))
-        token = str(uuid.uuid4())
+        if session['valid']:
+            print("ESTÁ VÁLIDO")
+            token = str(uuid.uuid4())
 
-        dic={'token_server':token,'mail': session['mail']}
-        print(dic)
-        res = requests.post(url="http://172.2.0.2/", data=dic)
+            cursor = conn.cursor()
+            cursor.execute(f"UPDATE users SET token='{token}' WHERE email='{session['mail']}'")
+            conn.commit()
+
+            cursor.execute(f"UPDATE users SET expire_time='{datetime.now() + timedelta(minutes=5)}' WHERE email='{session['mail']}'")
+            conn.commit()
 
         data = {"valid":True, "token": token} if session['valid'] else {"valid":False}
         print(data)        
@@ -52,7 +57,7 @@ def challenge_response():
         
         create_challenge()
         
-        payload = {'response': random_response_to_challenge_received[:3], 'new_challenge': session['challenge'] }
+        payload = {'response': random_response_to_challenge_received[:2], 'new_challenge': session['challenge'] }
         data = json.dumps(payload)
         
         return data
@@ -72,7 +77,7 @@ def challenge_response():
 
         session['response'] = get_response(challenge_received, session['challenge'])
         
-        payload = {'response': response_to_challenge_received[:3], 'new_challenge': session['challenge']  }
+        payload = {'response': response_to_challenge_received[:2], 'new_challenge': session['challenge']  }
         data = json.dumps(payload)
         
         return data
@@ -103,16 +108,19 @@ def redirect_uap():
         data = cursor.fetchone()
         cursor.close()
         
-        password = data[3]     # atualiza a password
-        session['password'] = password
+        if data:
+            password = data[3]     # atualiza a password
+            session['password'] = password
 
-        session['ECHAP_CURRENT'] += 1
-        create_challenge()
-        data = {"challenge": session['challenge'] }
-        data = json.dumps(data)
-        session['response'] = get_response(session['challenge'] , None)
+            session['ECHAP_CURRENT'] += 1
+            create_challenge()
+            data = {"challenge": session['challenge'] }
+            data = json.dumps(data)
+            session['response'] = get_response(session['challenge'] , None)
 
-        return data  
+            return data  
+        else:
+            return ""
 
 
 def verify_response(response, data_received):

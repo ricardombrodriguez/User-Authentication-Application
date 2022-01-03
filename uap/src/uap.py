@@ -29,17 +29,19 @@ redirect_site = False
 pass_to_encrypt = None
 key_to_decrypt = None
 token = None
+invalid_cred = False
 
 session = requests.Session()
 
 @app.route('/', methods=['POST', 'GET'])                                                                 
 def index(): 
-    global pass_to_encrypt
+    global pass_to_encrypt,invalid_cred
 
     if request.method == 'GET':
-        return render_template('index.html')
+        return render_template('index.html',invalid_cred=invalid_cred)
 
     elif request.method == 'POST':
+        invalid_cred = False
         pass1 = request.form['pass_to_encrypt']
         pass2 = request.form['pass_to_encrypt1']
 
@@ -53,7 +55,7 @@ def index():
 
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():                 
-    global password, email, dns, is_valid, reset, first, redirect_site, pass_to_encrypt, token
+    global password, email, dns, is_valid, reset, first, redirect_site, pass_to_encrypt, token, invalid_cred
 
     #receber o dns
     if request.method == 'GET':
@@ -61,6 +63,11 @@ def login():
         print("/login")
 
         content, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
+
+        if not content and not empty:
+            invalid_cred = True
+            return redirect(url_for("index"))
+
 
         credentials = {}
         if not empty:
@@ -74,7 +81,7 @@ def login():
                     saved_pass = cred["pass"]
                     credentials[saved_mail] = saved_pass
         
-        enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
+            enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
 
         return render_template('login.html', dic_mail=credentials, is_valid=is_valid)
     
@@ -92,6 +99,10 @@ def login():
 
         res = session.post('http://172.2.0.3:5001/uap', json=data)
 
+        if not res.text:
+            is_valid = False
+            return redirect(url_for('login'))
+
         session.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         if redirect_site:
@@ -102,7 +113,7 @@ def login():
 
             res = session.post(url="http://172.2.0.2/", data={'token_uap':token})
 
-            return redirect("http://172.2.0.2")
+            return redirect("http://172.2.0.2?token=%s" % token)
 
         return redirect(url_for('login'))
 
@@ -112,9 +123,11 @@ def authentication():
     global is_valid, email, password, dns, valid, first, challenge, response, reset, redirect_site, pass_to_encrypt, key_to_decrypt
     
     # se a uap estiver válida para o server (is_valid) e se o server estiver válido para a uap (valid)
+    
     if is_valid and valid:
 
         print("all valid")
+        exist = False
 
         content, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
 
@@ -173,7 +186,7 @@ def challenge_response():
         
         create_challenge()
         
-        payload = {'response': random_response_to_challenge_received[:3], 'new_challenge': challenge }
+        payload = {'response': random_response_to_challenge_received[:2], 'new_challenge': challenge }
         data = json.dumps(payload)
 
         res = session.post('http://172.2.0.3:5001/protocol', json=data)
@@ -203,7 +216,7 @@ def challenge_response():
         # print(challenge)
         response = get_response(challenge_received, challenge)
 
-        payload = {'response':  response_to_challenge_received[:3], 'new_challenge': challenge }
+        payload = {'response':  response_to_challenge_received[:2], 'new_challenge': challenge }
         data = json.dumps(payload)
 
         res = session.post('http://172.2.0.3:5001/protocol', json=data)
@@ -226,7 +239,7 @@ def challenge_response():
         create_challenge()
         response = get_response(challenge_received, challenge)
 
-        payload = {'response': response_to_challenge_received[:3], 'new_challenge': challenge }
+        payload = {'response': response_to_challenge_received[:2], 'new_challenge': challenge }
         data = json.dumps(payload)
 
         res = session.post('http://172.2.0.3:5001/protocol', json=data)
