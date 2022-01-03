@@ -46,6 +46,7 @@ def challenge_response():
 
         return json.dumps(data)
     
+    # se a resposta recebida não é valida continua a mandar challenges e respostas random 
     if not session['valid']:
         data = request.get_json(force=True) 
         data = json.loads(data)
@@ -60,6 +61,7 @@ def challenge_response():
         
         return data
 
+    #recebe o challenge, resolve-o e cria um novo para enviar
     else:
         data = request.get_json(force=True) 
         data = json.loads(data)
@@ -84,7 +86,7 @@ def challenge_response():
 @app.route('/uap', methods=['POST', 'GET'])                                                                 
 def redirect_uap():    
 
-
+    # reset das variáveis de sessão
     session['ECHAP_CURRENT'] = 0
     session['challenge'] = None
     session['response'] = None
@@ -119,7 +121,7 @@ def redirect_uap():
         else:
             return ""
 
-
+# verifica se os primeiros 2 bits da resposta coincidem com os 2 primeiros bits da solução correta
 def verify_response(response, data_received):
 
     response = ("".join(f"{ord(i):08b}" for i in response))[:2]
@@ -129,13 +131,15 @@ def verify_response(response, data_received):
     else:
         return False
 
-
+# cria um novo challenge
 def create_challenge():
     session['challenge']  = str(secrets.randbelow(1000000))
 
+# resolução de um challenge
 def get_response(received_challenge, mychallenge):
     if not mychallenge: mychallenge = ""
     return sha256((received_challenge+ session['password']+mychallenge).encode('utf-8')).hexdigest()
 
+# criação de uma resposta random
 def random_response():
     return sha256((str(secrets.randbelow(1000000))).encode('utf-8')).hexdigest()

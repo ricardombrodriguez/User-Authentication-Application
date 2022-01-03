@@ -6,8 +6,6 @@ For the 2nd assignment of the [Segurança Informática e nas Organizações](htt
 
 
 
-
-
 ## **2 | Entities**
 
 - ***app_auth***:

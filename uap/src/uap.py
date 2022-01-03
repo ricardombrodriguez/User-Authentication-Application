@@ -8,26 +8,23 @@ import secrets
 import tempfile                        
 from flask import redirect, url_for
 import enc
-
 import json, os,hashlib
-
 import requests
 from requests.sessions import session   
 
 app = Flask(__name__)
 
-dns = "http://172.2.0.2"
+# variáveis de controlo (importantes)
+dns = None          # guarda o url da aplicação que pediu uma autenticação
 challenge = None    # challenge criado pelo server
 response = None     # resposta para o challenge criado pelo server
-first = True        
-valid = True        # o user que estamos a autenticar é valido ou não
+first = True        # se é a primeira iteração do ECHAP ou não
+valid = True        # se o user que estamos a autenticar é valido ou não
 is_valid = None     # variavel controlo para autenticar se user valido ou não
-password = None
-email = None
-reset = False
+password = None     # guarda password introduzida pelo user
+email = None        # guarda email introduzido pelo user
 redirect_site = False
 pass_to_encrypt = None
-key_to_decrypt = None
 token = None
 invalid_cred = False
 
@@ -45,6 +42,7 @@ def index():
         pass1 = request.form['pass_to_encrypt']
         pass2 = request.form['pass_to_encrypt1']
 
+        # verificar se a password é a mesma em ambas as texbox
         if pass1 != pass2:
             return render_template('index.html', valid=False)
 
@@ -55,11 +53,11 @@ def index():
 
 @app.route('/login', methods=['POST', 'GET'])                                                                 
 def login():                 
-    global password, email, dns, is_valid, reset, first, redirect_site, pass_to_encrypt, token, invalid_cred
+    global password, email, dns, is_valid, first, redirect_site, pass_to_encrypt, token, invalid_cred
 
-    #receber o dns
     if request.method == 'GET':
 
+        # fazer autocomplete com as credenciais de credencials.txt
         content, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
 
         if not content and not empty:
@@ -83,7 +81,7 @@ def login():
 
         return render_template('login.html', dic_mail=credentials, is_valid=is_valid)
     
-    # login
+
     elif request.method == 'POST':
 
         email =  request.form['email']
@@ -95,6 +93,7 @@ def login():
 
         res = session.post('http://172.2.0.3:5001/uap', json=data)
 
+        # caso a resposta do POST for "", siginifica que as credenciais colocadas não existem
         if res.text == "":
             is_valid = False
             return redirect(url_for('login'))
@@ -103,7 +102,6 @@ def login():
 
         if redirect_site:
             # fazer um post com um token e o email
-
             data = {'token_uap':token}
 
             res = session.post(url="http://172.2.0.2/", data={'token_uap':token})
@@ -115,7 +113,7 @@ def login():
 
 @app.route('/authentication', methods=['POST', 'GET'])                                                                 
 def authentication():
-    global is_valid, email, password, dns, valid, first, challenge, response, reset, redirect_site, pass_to_encrypt, key_to_decrypt
+    global is_valid, email, password, dns, valid, first, challenge, response, redirect_site, pass_to_encrypt
     
     # se a uap estiver válida para o server (is_valid) e se o server estiver válido para a uap (valid)
     
@@ -127,6 +125,7 @@ def authentication():
 
         open("credentials.txt", "r+").close() # apagar dados do ficheiro
 
+        # atualizar o conteúdo de credentials.txt 
         if not empty:
 
             content = content.decode("utf-8").replace("\'", "\"")
@@ -149,7 +148,7 @@ def authentication():
         else:
             content = [ { dns: [{"mail":email, "pass": password}] } ]
 
-        # encriptar o ficheiro
+        # encriptar o ficheiro com o conteúdo atualizado
         enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
         
         reset_variables()
@@ -168,7 +167,7 @@ def authentication():
 def challenge_response():
     global first, valid, is_valid, response, challenge, token
 
-    # a uap vai deixar de ter o echap current e chega a uma altura em que vai receber a resposta do server a dizer se é valid ou n
+    # a uap vai deixar de ter o echap current e chega a uma altura em que vai receber a resposta do server a dizer se é valid ou não
 
     if not valid:
         data = request.get_json(force=True) 
