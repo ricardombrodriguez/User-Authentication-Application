@@ -101,8 +101,21 @@ include("connection.php");
                 </div>
                 <div class="col-lg-3">
                     <div class="header__cart">
-                        <ul>
-                            <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                    <ul>
+                            <?php if ($_SESSION['LOGGED']): ?>
+                            <form method='POST'>
+                                <input type="hidden" id="logout" name="logout" value="">
+                                <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                            </form>
+                            <?php else : ?>
+                            <li>
+                            <form action='http://localhost:5002/dns' method='POST'>
+                                <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
+                                <i class="fa fa-sign-in"> </i><button type="submit" style="color: green; border: none; background: none; padding: 0;"> Login</a>
+                            </form>
+                            </li>
+                            <?php endif; ?>
+
                             <li><a href="./shoping-cart.php" style="color: green"><i class="fa fa-shopping-cart"></i> Shopping Cart</a></li>
                         </ul>
                     </div>
@@ -134,7 +147,7 @@ include("connection.php");
                             <tbody>
                             <?php
 
-                                $q = "SELECT trips.nome, trips.id, trips.preco, users_trips.quantidade from users_trips INNER JOIN trips ON trips.id=users_trips.trip_id WHERE `user_id`={$_SESSION['user_id']}";
+                                $q = "SELECT trips.nome, trips.id, trips.preco, users_trips.quantidade from users_trips INNER JOIN trips ON trips.id=users_trips.trip_id WHERE `user_id`=".$_SESSION['user_id'];
                                 $result = mysqli_query($conn,$q);
 
                                 if($result->num_rows == 0){
@@ -173,7 +186,7 @@ include("connection.php");
                                         
                                         <?php
                                             if (isset($_GET['trip_id'])) {
-                                                $q = "DELETE FROM users_trips WHERE `user_id`={$_SESSION["user_id"]} AND trip_id={$_GET["trip_id"]}";
+                                                $q = "DELETE FROM users_trips WHERE `user_id`=".$_SESSION["user_id"]." AND trip_id=".$_GET["trip_id"];
                                                 $result = mysqli_query($conn,$q);
                                             
                                                 if (!$result){

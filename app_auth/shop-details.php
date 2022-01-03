@@ -118,8 +118,21 @@ include("connection.php");
                 </div>
                 <div class="col-lg-3">
                     <div class="header__cart">
-                        <ul>
-                            <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                    <ul>
+                            <?php if ($_SESSION['LOGGED']): ?>
+                            <form method='POST'>
+                                <input type="hidden" id="logout" name="logout" value="">
+                                <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                            </form>
+                            <?php else : ?>
+                            <li>
+                            <form action='http://localhost:5002/dns' method='POST'>
+                                <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
+                                <i class="fa fa-sign-in"> </i><button type="submit" style="color: green; border: none; background: none; padding: 0;"> Login</a>
+                            </form>
+                            </li>
+                            <?php endif; ?>
+
                             <li><a href="./shoping-cart.php" style="color: green"><i class="fa fa-shopping-cart"></i> Shopping Cart</a></li>
                         </ul>
                     </div>
@@ -183,7 +196,7 @@ include("connection.php");
                                 <div class="quantity">
                                     <div class="pro-qty">
                                         <input type="text" name="quantidade" id="quantidade" value="<?php 
-                                            $q = "SELECT trips.nome, trips.id, trips.preco, users_trips.quantidade from users_trips INNER JOIN trips ON trips.id=users_trips.trip_id WHERE `user_id`={$_SESSION['user_id']}";
+                                            $q = "SELECT trips.nome, trips.id, trips.preco, users_trips.quantidade from users_trips INNER JOIN trips ON trips.id=users_trips.trip_id WHERE `user_id`=".$_SESSION['user_id'];
                                             $result = mysqli_query($conn,$q);
                                             if($result->num_rows == 1){
                                                 $row = $result->fetch_row();
@@ -200,32 +213,41 @@ include("connection.php");
                         <?php
                             if (isset($_POST['add_to_cart'])) {
 
-                                $query = "SELECT * FROM users_trips WHERE `user_id`={$_SESSION['user_id']} AND trip_id={$_SESSION['id']}";
-                                $result = mysqli_query($conn,$query);
+                                if ($_SESSION['user_id'] == -1) {
+                                    echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR: you need to log in</p> </div>";
 
-                                if ($_POST['quantidade'] < 1) {
-                                    echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR: quantity selected must be positive</p> </div>";
                                 } else {
+                                    $query = "SELECT * FROM users_trips WHERE `user_id`=".$_SESSION['user_id']." AND trip_id=".$_SESSION['id'];
+                                    $result = mysqli_query($conn,$query);
 
-                                    if($result->num_rows != 0){
-                                        $query = "UPDATE users_trips SET quantidade={$_POST['quantidade']} WHERE `user_id`={$_SESSION['user_id']} AND trip_id={$_SESSION['id']}";
-                                        $result = mysqli_query($conn,$query);
-                                        if (!$result) {
-                                            echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR in adding trip to cart. It already exists (go to shopping cart)</p> </div>";
-                                        } else {
-                                            echo "<div class=\"container-login100-form-btn\" ><p style=\" color: green\">Number of bookings updated!</p> </div>";
-                                        }
+                                    if ($_POST['quantidade'] < 1) {
+                                        echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR: quantity selected must be positive</p> </div>";
                                     } else {
-                                        $query = "INSERT INTO users_trips (`user_id`, trip_id, quantidade) VALUES ({$_SESSION['user_id']}, {$_SESSION['id']}, {$_POST['quantidade']})";
-                                        $result = mysqli_query($conn,$query);
 
-                                        if (!$result){
-                                            echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR in adding trip to cart.</p> </div>";
+                                        if($result->num_rows != 0){
+                                            $query = "UPDATE users_trips SET quantidade={$_POST['quantidade']} WHERE `user_id`=".$_SESSION['user_id']." AND trip_id=".$_SESSION['id'];
+                                            $result = mysqli_query($conn,$query);
+                                            if (!$result) {
+                                                echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR in adding trip to cart. It already exists (go to shopping cart)</p> </div>";
+                                            } else {
+                                                echo "<div class=\"container-login100-form-btn\" ><p style=\" color: green\">Number of bookings updated!</p> </div>";
+                                            }
                                         } else {
-                                            echo "<script> location.replace('shoping-cart.php'); </script>";
+                                            $query = "INSERT INTO users_trips(`user_id`, `trip_id`, `quantidade`) VALUES (".$_SESSION['user_id'].", ".$_SESSION['id'].", ".$_POST['quantidade'].")";
+                                            echo $query;
+                                            $result = mysqli_query($conn,$query);
+
+                                            if (!$result){
+                                                echo "<div class=\"container-login100-form-btn\" ><p style=\" color: red\">ERROR in adding trip to cart.</p> </div>";
+                                                echo mysqli_error($conn);
+                                            } else {
+                                                echo "<script> location.replace('shoping-cart.php'); </script>";
+                                            }
                                         }
                                     }
                                 }
+
+                                
                             }
                         ?>
 
@@ -319,8 +341,6 @@ include("connection.php");
         </div>
     </section>
     <!-- Product Details Section End -->
-
-    
 
 
     <!-- Js Plugins -->

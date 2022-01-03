@@ -15,16 +15,19 @@
       <div class="formcontainer">
         <div class="container">
         <label for="password"><strong>Insira uma Password</strong></label>
-        <input type="password" id="pass_to_encrypt" name="pass_to_encrypt" placeholder="Password" >
+        <input type="password" id="pass_to_encrypt" name="pass_to_encrypt" placeholder="Password" required>
       </div>
         <div class="container">
           <label for="password"><strong>Insira novamente a Password</strong></label>
-          <input type="password" id="pass_to_encrypt1" name="pass_to_encrypt1" placeholder="Password">
+          <input type="password" id="pass_to_encrypt1" name="pass_to_encrypt1" placeholder="Password" required>
         </div>
         <button type="submit" name="bttn">Continuar</button>
       </div>
       {% if valid == False %} 
-      <p style="color: red;">Passwords doesn't match. Try again.</p>
+      <p style="color: red;">Passwords don't match. Try again.</p>
+      {% endif %}
+      {% if invalid_cred %} 
+      <p style="color: red;">Invalid decryption/encryption passwords. Try again.</p>
       {% endif %}
     </form>
   </body>

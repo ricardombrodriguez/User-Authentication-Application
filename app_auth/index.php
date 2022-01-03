@@ -32,7 +32,46 @@ include("connection.php");
 <body>
 
     <?php
+
+    $_SESSION['REFERER'] = "http://172.2.0.2";
+
     $result = $conn->query("SELECT * FROM trips") or die($conn->error);
+    $token = $_GET['token'];
+
+    $_SESSION['LOGGED'] = False;
+    $hello_user = False;
+
+    if (!empty($token)) {
+
+        $query = "SELECT * from users where token='". $token ."'";
+        $resultado = mysqli_query($conn,$query);
+        $linha = mysqli_fetch_array($resultado);
+        if ($linha) {
+            $current_time = date(time());
+            $user = strtoupper($linha["nome"]);
+
+            if ( $current_time > $linha["expire_time"]) {
+                $_SESSION['LOGGED'] = False;
+
+            } else {
+                if ($linha["token"] == $token) {
+                    $_SESSION['LOGGED'] = True;
+
+                } else {
+                    $_SESSION['LOGGED'] = False;
+                }
+            }
+        }
+
+        if ($_SESSION['LOGGED']) {
+            $_SESSION['user_id'] = $linha["id"] ;
+        } else {
+            $_SESSION['user_id'] = -1;
+        }
+
+        
+    }
+
     ?>
 
     <!-- Page Preloder -->
@@ -44,7 +83,7 @@ include("connection.php");
     <div class="humberger__menu__overlay"></div>
     <div class="humberger__menu__wrapper">
         <div class="humberger__menu__logo">
-            <a href="#"><img src="img/logo.png" alt=""></a>
+            <a href="./index.php"><img src="img/logo.png" alt=""></a>
         </div>
         <div class="humberger__menu__cart">
             <ul>
@@ -88,45 +127,6 @@ include("connection.php");
     </div>
     <!-- Humberger End -->
 
-
-    <?php
-
-        $tokens = [];
-
-        $_SESSION['REFERER'] = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
-        $redirect_link = "http://localhost:5002/dns?referer=".$_SESSION['REFERER'];
-
-        if (isset($_POST["token_server"])) {
-
-            echo "Token server";
-            $token = $_POST["token_server"];
-            $tokens[$token] = $_POST["mail"];
-            
-    
-        } else {
-            print_r("AAAAAAAAAAAAAAAAAAAAAAAAA ");
-            print_r($_POST);
-        }
-
-
-
-        if (isset($_POST["token_uap"])) {
-
-            echo "lets goooo!";
-
-            $token = $_POST["token_uap"];
-            $email = "";
-            if (array_key_exists($token, $tokens)) {
-                echo "Existe esse token!";
-                $email = $_POST["mail"];
-
-            }
-            echo "email do user:".$email;
-        
-        }
-
-    ?>
-
     <!-- Header Section Begin -->
     <header class="header">
         <div class="container">
@@ -147,11 +147,22 @@ include("connection.php");
                 <div class="col-lg-3">
                     <div class="header__cart">
                         <ul>
+                            <?php if ($_SESSION['LOGGED']): ?>
+
+                            <form method='POST'>
+                                <input type="hidden" id="logout" name="logout" value="">
+                                <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                            </form>
+                            <?php else : ?>
+
+                            <li>
                             <form action='http://localhost:5002/dns' method='POST'>
                                 <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
-                                <li><button type="submit" style="color: green; border: none; background: none; padding: 0;"><i class="fa fa-sign-in"></i> Login</a></li>
+                                <i class="fa fa-sign-in"> </i><button type="submit" style="color: green; border: none; background: none; padding: 0;"> Login</a>
                             </form>
-                            <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                            </li>
+                            <?php endif; ?>
+
                             <li><a href="./shoping-cart.php" style="color: green"><i class="fa fa-shopping-cart"></i> Shopping Cart</a></li>
                         </ul>
                     </div>
@@ -164,6 +175,7 @@ include("connection.php");
     </header>
     <!-- Header Section End -->
 
+
     <!-- Hero Section Begin -->
     <section class="hero">
         <div class="container">
@@ -171,7 +183,11 @@ include("connection.php");
                 <div class="col-lg-12">
                     <div class="hero__item set-bg" data-setbg="img/banner/travel_HD.jpg">
                         <div class="hero__text">
+                            <?php if ($_SESSION["LOGGED"]): ?>
+                            <h4 style="	font-size: 14px;text-transform: uppercase;font-weight: 700;letter-spacing: 4px;color: #252525;">WELCOME <?php echo $user; ?></h4>
+                            <?php else : ?>
                             <span>TRAVEL AGENCY</span>
+                            <?php endif; ?>
                             <h2>Travel <br />with pleasure.</h2>
                             <p>The best choice for your trips.</p>
                         </div>

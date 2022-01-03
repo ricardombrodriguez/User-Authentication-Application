@@ -7,6 +7,8 @@ create table if not exists `users` (
     `nome` VARCHAR(100) NOT NULL,
     `email` VARCHAR(150) NOT NULL,
     `pass` VARCHAR(100) NOT NULL,
+    `token` VARCHAR(300),
+    `expire_time` TIMESTAMP,
 
     PRIMARY KEY(`id`)
 );
@@ -43,18 +45,18 @@ create table if not exists `users_trips` (
 go
 
 -- INSERTS USERS
-INSERT INTO `users` (`nome`, `email`, `pass`) VALUES ('admin', MD5('admin'), MD5('admin'));
-insert into `users` (`nome`,`email`,`pass`) values ('Lissi Nozzolii', MD5('lnozzolii0@examiner.com'), MD5('4Mhm9xslPBO'));
-insert into `users` (`nome`,`email`,`pass`) values ('Cherice Burds', MD5('cburds1@slate.com'), MD5('6kFZ96fFBY'));
-insert into `users` (`nome`,`email`,`pass`) values ('Murvyn Purkins', MD5('mpurkins2@eventbrite.com'), MD5('bvipO5FUFeq2'));
-insert into `users` (`nome`,`email`,`pass`) values ('Rianon Spraggs', MD5('rspraggs3@tripadvisor.com'), MD5('7CAqw7V0oOe4'));
-insert into `users` (`nome`,`email`,`pass`) values ('Karee Greim', MD5('kgreim4@feedburner.com'), MD5('cuLOVdWG'));
-insert into `users` (`nome`,`email`,`pass`) values ('Kriste Seefeldt', MD5('kseefeldt5@nyu.edu'), MD5('zi7cDgVM'));
-insert into `users` (`nome`,`email`,`pass`) values ('Waylan Slimon', MD5('wslimon6@sphinn.com'), MD5('ePkufSE'));
-insert into `users` (`nome`,`email`,`pass`) values ('Ricardo Dermott', MD5('rdermott7@va.gov'), MD5('WDQ9pgWSWc'));
-insert into `users` (`nome`,`email`,`pass`) values ('Cal Petriello', MD5('cpetriello8@irs.gov'), MD5('8jdrunVIx7'));
-insert into `users` (`nome`,`email`,`pass`) values ('Harlan Gaukrodge', MD5('hgaukrodge9@de.vu'), MD5('rTfQ8TXEd9n'));
-insert into `users` (`nome`,`email`,`pass`) values ('DX', MD5('leitono@dil.papi'), MD5('esti8'));
+INSERT INTO `users` (`nome`,`email`, `pass`) VALUES ('admin', MD5('admin'), MD5('admin'));
+insert into `users` (`nome`,`email`, `pass`) values ('Lissi Nozzolii', MD5('lnozzolii0@examiner.com'), MD5('4Mhm9xslPBO'));
+insert into `users` (`nome`,`email`, `pass`) values ('Cherice Burds', MD5('cburds1@slate.com'), MD5('6kFZ96fFBY'));
+insert into `users` (`nome`,`email`, `pass`) values ('Murvyn Purkins', MD5('mpurkins2@eventbrite.com'), MD5('bvipO5FUFeq2'));
+insert into `users` (`nome`,`email`, `pass`) values ('Rianon Spraggs', MD5('rspraggs3@tripadvisor.com'), MD5('7CAqw7V0oOe4'));
+insert into `users` (`nome`,`email`, `pass`) values ('Karee Greim', MD5('kgreim4@feedburner.com'), MD5('cuLOVdWG'));
+insert into `users` (`nome`,`email`, `pass`) values ('Kriste Seefeldt', MD5('kseefeldt5@nyu.edu'), MD5('zi7cDgVM'));
+insert into `users` (`nome`,`email`, `pass`) values ('Waylan Slimon', MD5('wslimon6@sphinn.com'), MD5('ePkufSE'));
+insert into `users` (`nome`,`email`, `pass`) values ('Ricardo Dermott', MD5('rdermott7@va.gov'), MD5('WDQ9pgWSWc'));
+insert into `users` (`nome`,`email`, `pass`) values ('Cal Petriello', MD5('cpetriello8@irs.gov'), MD5('8jdrunVIx7'));
+insert into `users` (`nome`,`email`, `pass`) values ('Harlan Gaukrodge', MD5('hgaukrodge9@de.vu'), MD5('rTfQ8TXEd9n'));
+insert into `users` (`nome`,`email`, `pass`) values ('DX', MD5('leitono@dil.papi'), MD5('esti8'));
 
 INSERT INTO `trips` (`nome`, `preco`, `descricao`, `lugar`, `avaliacao`) VALUES ('Magic Ski', 50.90, 'Melho viagem de sempre', 'Andorra', 4);
 
