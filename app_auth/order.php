@@ -102,12 +102,11 @@ include("connection.php");
                     <nav class="header__menu">
                     <ul>
                             <?php if ($_SESSION['LOGGED']): ?>
-                            <?php $_SESSION['LOGGED'] = False ?>
-                            <?php $_SESSION['HELLO_USER'] = True ?>
-                            <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
-
+                            <form method='POST'>
+                                <input type="hidden" id="logout" name="logout" value="">
+                                <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                            </form>
                             <?php else : ?>
-                            <?php $_SESSION['HELLO_USER'] = False ?>
                             <li>
                             <form action='http://localhost:5002/dns' method='POST'>
                                 <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
@@ -134,7 +133,6 @@ include("connection.php");
             </div>
         </div>
     </header>
-
 	</div>
     <!-- Product table  -->
     <section class="ftco-section">

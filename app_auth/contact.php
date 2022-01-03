@@ -98,12 +98,12 @@
                         <div class="header__cart">
                             <ul>
                                 <?php if ($_SESSION['LOGGED']): ?>
-                                <?php $_SESSION['LOGGED'] = False ?>
-                                <?php $_SESSION['HELLO_USER'] = True ?>
-                                <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
-
+                               
+                                <form method='POST'>
+                                    <input type="hidden" id="logout" name="logout" value="">
+                                    <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                                </form>
                                 <?php else : ?>
-                                <?php $_SESSION['HELLO_USER'] = False ?>
                                 <li>
                                 <form action='http://localhost:5002/dns' method='POST'>
                                     <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
@@ -125,7 +125,7 @@
         <!-- Header Section End -->
 
         <!-- Contact Form Begin -->
-        <div class="contact-form spad" style="background-image=url('img/banner/banner.png')">
+        <div class="contact-form spad" style="background-image:url('img/banner/banner.png')">
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12">

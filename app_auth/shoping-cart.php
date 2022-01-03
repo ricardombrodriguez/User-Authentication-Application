@@ -103,12 +103,11 @@ include("connection.php");
                     <div class="header__cart">
                     <ul>
                             <?php if ($_SESSION['LOGGED']): ?>
-                            <?php $_SESSION['LOGGED'] = False ?>
-                            <?php $_SESSION['HELLO_USER'] = True ?>
-                            <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
-
+                            <form method='POST'>
+                                <input type="hidden" id="logout" name="logout" value="">
+                                <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
+                            </form>
                             <?php else : ?>
-                            <?php $_SESSION['HELLO_USER'] = False ?>
                             <li>
                             <form action='http://localhost:5002/dns' method='POST'>
                                 <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
@@ -148,7 +147,7 @@ include("connection.php");
                             <tbody>
                             <?php
 
-                                $q = "SELECT trips.nome, trips.id, trips.preco, users_trips.quantidade from users_trips INNER JOIN trips ON trips.id=users_trips.trip_id WHERE `user_id`={$_SESSION['user_id']}";
+                                $q = "SELECT trips.nome, trips.id, trips.preco, users_trips.quantidade from users_trips INNER JOIN trips ON trips.id=users_trips.trip_id WHERE `user_id`=".$_SESSION['user_id'];
                                 $result = mysqli_query($conn,$q);
 
                                 if($result->num_rows == 0){
@@ -187,7 +186,7 @@ include("connection.php");
                                         
                                         <?php
                                             if (isset($_GET['trip_id'])) {
-                                                $q = "DELETE FROM users_trips WHERE `user_id`={$_SESSION["user_id"]} AND trip_id={$_GET["trip_id"]}";
+                                                $q = "DELETE FROM users_trips WHERE `user_id`=".$_SESSION["user_id"]." AND trip_id=".$_GET["trip_id"];
                                                 $result = mysqli_query($conn,$q);
                                             
                                                 if (!$result){

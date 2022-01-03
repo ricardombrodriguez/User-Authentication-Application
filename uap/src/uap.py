@@ -60,8 +60,6 @@ def login():
     #receber o dns
     if request.method == 'GET':
 
-        print("/login")
-
         content, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
 
         if not content and not empty:
@@ -88,8 +86,6 @@ def login():
     # login
     elif request.method == 'POST':
 
-        print("cliquei no login")
-
         email =  request.form['email']
         password = request.form['pass']
                 
@@ -99,14 +95,13 @@ def login():
 
         res = session.post('http://172.2.0.3:5001/uap', json=data)
 
-        if not res.text:
+        if res.text == "":
             is_valid = False
             return redirect(url_for('login'))
 
         session.post('http://localhost:5002/protocol', json=json.dumps(res.text))
 
         if redirect_site:
-
             # fazer um post com um token e o email
 
             data = {'token_uap':token}
@@ -126,7 +121,6 @@ def authentication():
     
     if is_valid and valid:
 
-        print("all valid")
         exist = False
 
         content, empty = enc.decrypt("credentials.txt", pass_to_encrypt)
@@ -158,15 +152,14 @@ def authentication():
         # encriptar o ficheiro
         enc.encrypt(str(content), "credentials.txt", pass_to_encrypt)
         
-        print(">> DONE")
-        
         reset_variables()
         redirect_site = True
         return "redirecting to the website..."
         
     else:
         reset_variables()
-        is_valid = False    
+        is_valid = False
+        redirect_site = False    
 
         return redirect(url_for('login'))
 
@@ -178,15 +171,15 @@ def challenge_response():
     # a uap vai deixar de ter o echap current e chega a uma altura em que vai receber a resposta do server a dizer se é valid ou n
 
     if not valid:
-        print("RANDOM")
         data = request.get_json(force=True) 
         data = json.loads(data)
         
         random_response_to_challenge_received = random_response()   # resposta random
+        random_response_to_challenge_received = ("".join(f"{ord(i):08b}" for i in random_response_to_challenge_received))[:2]
         
         create_challenge()
         
-        payload = {'response': random_response_to_challenge_received[:2], 'new_challenge': challenge }
+        payload = {'response': random_response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
         res = session.post('http://172.2.0.3:5001/protocol', json=data)
@@ -205,18 +198,17 @@ def challenge_response():
         first = False
         data = request.get_json(force=True)
         data = json.loads(json.loads(data))
-        print("dados recebidos no first:")
-        print(data)
+
 
         # recebido
         challenge_received = data['challenge']
         response_to_challenge_received = get_response(challenge_received, None)
+        response_to_challenge_received = ("".join(f"{ord(i):08b}" for i in response_to_challenge_received))[:2]
 
         create_challenge()
-        # print(challenge)
         response = get_response(challenge_received, challenge)
 
-        payload = {'response':  response_to_challenge_received[:2], 'new_challenge': challenge }
+        payload = {'response':  response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
         res = session.post('http://172.2.0.3:5001/protocol', json=data)
@@ -232,6 +224,7 @@ def challenge_response():
 
         challenge_received = data['new_challenge']
         response_to_challenge_received = get_response(challenge, challenge_received)      # resposta ao challenge que recebemos
+        response_to_challenge_received = ("".join(f"{ord(i):08b}" for i in response_to_challenge_received))[:2]
 
         data_received = data['response']
         valid = verify_response(response, data_received)
@@ -239,7 +232,7 @@ def challenge_response():
         create_challenge()
         response = get_response(challenge_received, challenge)
 
-        payload = {'response': response_to_challenge_received[:2], 'new_challenge': challenge }
+        payload = {'response': response_to_challenge_received, 'new_challenge': challenge }
         data = json.dumps(payload)
 
         res = session.post('http://172.2.0.3:5001/protocol', json=data)
@@ -264,7 +257,6 @@ def receive_dns():
     global dns
 
     dns = request.form.get('dns')
-    print("DNS recebido: ", dns)
     # redirect para o "/"
     return redirect(url_for('index'))
 
@@ -283,8 +275,9 @@ def reset_variables():
 
 def verify_response(response, data_received):
 
-    if response.startswith(data_received):
-        print("resposta igual")
+    response = ("".join(f"{ord(i):08b}" for i in response))[:2]
+
+    if response == data_received:
         return True
     else:
         return False

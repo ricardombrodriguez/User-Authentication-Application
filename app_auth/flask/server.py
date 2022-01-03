@@ -15,20 +15,18 @@ app.config['SECRET_KEY'] = os.urandom(32)
 
 conn = mysql.connector.connect( user='admin', password='admin', host='mysql', port=3306, database='spoton', use_pure=True )   
 
+
 @app.route('/protocol', methods=['POST', 'GET'])                                                                 
 def challenge_response():
-
-    print("/protocol")
     
     session['ECHAP_CURRENT'] += 1
+
     ECHAP_MAX = 10
 
     # final, diz se o user está autenticado ou não
     if session['ECHAP_CURRENT'] == ECHAP_MAX:
 
-        print("[SERVER] VALID: " + str(session['valid']))
         if session['valid']:
-            print("ESTÁ VÁLIDO")
             token = str(uuid.uuid4())
 
             cursor = conn.cursor()
@@ -39,7 +37,6 @@ def challenge_response():
             conn.commit()
 
         data = {"valid":True, "token": token} if session['valid'] else {"valid":False}
-        print(data)        
         session['ECHAP_CURRENT']  = 0
         session['challenge'] = None    
         session['response'] = None       
@@ -54,21 +51,22 @@ def challenge_response():
         data = json.loads(data)
 
         random_response_to_challenge_received = random_response()   # resposta random
+        random_response_to_challenge_received = ("".join(f"{ord(i):08b}" for i in random_response_to_challenge_received))[:2]
         
         create_challenge()
         
-        payload = {'response': random_response_to_challenge_received[:2], 'new_challenge': session['challenge'] }
+        payload = {'response': random_response_to_challenge_received, 'new_challenge': session['challenge'] }
         data = json.dumps(payload)
         
         return data
 
     else:
-        print("else")
         data = request.get_json(force=True) 
         data = json.loads(data)
 
         challenge_received = data['new_challenge']
         response_to_challenge_received = get_response(session['challenge'],challenge_received)    # resposta ao challenge que recebemos
+        response_to_challenge_received = ("".join(f"{ord(i):08b}" for i in response_to_challenge_received))[:2]
 
         data_received = data['response']
         session['valid'] = verify_response(session['response'], data_received)
@@ -77,7 +75,7 @@ def challenge_response():
 
         session['response'] = get_response(challenge_received, session['challenge'])
         
-        payload = {'response': response_to_challenge_received[:2], 'new_challenge': session['challenge']  }
+        payload = {'response': response_to_challenge_received, 'new_challenge': session['challenge']  }
         data = json.dumps(payload)
         
         return data
@@ -86,7 +84,6 @@ def challenge_response():
 @app.route('/uap', methods=['POST', 'GET'])                                                                 
 def redirect_uap():    
 
-    print("/uap")
 
     session['ECHAP_CURRENT'] = 0
     session['challenge'] = None
@@ -125,8 +122,9 @@ def redirect_uap():
 
 def verify_response(response, data_received):
 
-    if response.startswith(data_received):
-        print("resposta igual")
+    response = ("".join(f"{ord(i):08b}" for i in response))[:2]
+
+    if response == data_received:
         return True
     else:
         return False

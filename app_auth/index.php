@@ -39,10 +39,9 @@ include("connection.php");
     $token = $_GET['token'];
 
     $_SESSION['LOGGED'] = False;
-    $_SESSION['HELLO_USER'] = False;
+    $hello_user = False;
 
     if (!empty($token)) {
-        echo "token ";
 
         $query = "SELECT * from users where token='". $token ."'";
         $resultado = mysqli_query($conn,$query);
@@ -50,27 +49,28 @@ include("connection.php");
         if ($linha) {
             $current_time = date(time());
             $user = strtoupper($linha["nome"]);
-            echo "here ".$linha["nome"]." ";
 
             if ( $current_time > $linha["expire_time"]) {
-                echo "expirado ";
                 $_SESSION['LOGGED'] = False;
 
             } else {
                 if ($linha["token"] == $token) {
-                    echo "entrou ";
                     $_SESSION['LOGGED'] = True;
 
                 } else {
-                    echo "token invalido ";
                     $_SESSION['LOGGED'] = False;
                 }
             }
-        } else {
-            echo "query não tem dados";
         }
+
+        if ($_SESSION['LOGGED']) {
+            $_SESSION['user_id'] = $linha["id"] ;
+        } else {
+            $_SESSION['user_id'] = -1;
+        }
+
         
-    } 
+    }
 
     ?>
 
@@ -148,13 +148,13 @@ include("connection.php");
                     <div class="header__cart">
                         <ul>
                             <?php if ($_SESSION['LOGGED']): ?>
-                            <?php $_SESSION['HELLO_USER'] = True ?>
+
                             <form method='POST'>
                                 <input type="hidden" id="logout" name="logout" value="">
                                 <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
                             </form>
                             <?php else : ?>
-                            <?php $_SESSION['HELLO_USER'] = False ?>
+
                             <li>
                             <form action='http://localhost:5002/dns' method='POST'>
                                 <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
@@ -175,11 +175,6 @@ include("connection.php");
     </header>
     <!-- Header Section End -->
 
-    <?php
-    if(isset($POST["logout"])) {
-        $_SESSION['LOGGED'] = False;
-    }
-    ?>
 
     <!-- Hero Section Begin -->
     <section class="hero">
@@ -188,7 +183,7 @@ include("connection.php");
                 <div class="col-lg-12">
                     <div class="hero__item set-bg" data-setbg="img/banner/travel_HD.jpg">
                         <div class="hero__text">
-                            <?php if ($hello_user): ?>
+                            <?php if ($_SESSION["LOGGED"]): ?>
                             <h4 style="	font-size: 14px;text-transform: uppercase;font-weight: 700;letter-spacing: 4px;color: #252525;">WELCOME <?php echo $user; ?></h4>
                             <?php else : ?>
                             <span>TRAVEL AGENCY</span>

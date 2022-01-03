@@ -104,12 +104,9 @@ include("connection.php");
                     <div class="header__cart">
                         <ul>
                             <?php if ($_SESSION['LOGGED']): ?>
-                            <?php $_SESSION['LOGGED'] = False ?>
-                            <?php $_SESSION['HELLO_USER'] = True ?>
                             <li><a href="./index.php" style="color: green"><i class="fa fa-sign-out"></i> Logout</a></li>
 
                             <?php else : ?>
-                            <?php $_SESSION['HELLO_USER'] = False ?>
                             <li>
                             <form action='http://localhost:5002/dns' method='POST'>
                                 <input type="hidden" id="dns" name="dns" value="<?php echo $_SESSION['REFERER'] ?>">
@@ -129,7 +126,6 @@ include("connection.php");
         </div>
     </header>
     <!-- Header Section End -->
-
     <!-- Breadcrumb Section Begin -->
     <section class="breadcrumb-section set-bg">
         <div class="container">
