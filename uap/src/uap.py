@@ -86,6 +86,7 @@ def login():
         return render_template('login.html', dic_mail=credentials, is_valid=is_valid)
     
 
+
     elif request.method == 'POST':
 
         email =  request.form['email']
